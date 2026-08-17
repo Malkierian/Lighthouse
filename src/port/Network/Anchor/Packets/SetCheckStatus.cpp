@@ -6,6 +6,7 @@
 #include "port/Rando/Rando.h"
 #include "port/Rando/CustomObject/CustomObject.h"
 #include "port/Rando/StaticData/StaticData.h"
+#include "port/Settings/Settings.h"
 
 #include "functions.h"
 extern "C" {
@@ -74,7 +75,7 @@ void Anchor::HandlePacket_SetCheckStatus(nlohmann::json& payload) {
 
     AdoptRemoteCheck(rc);
 
-    if (CVarGetInteger(CVAR_RANDOMIZER_SETTING("RandoNotifications"), 1) && ShouldShowNotifications()) {
+    if (Settings::RANDO_NOTIFICATIONS && ShouldShowNotifications()) {
         Rando::StaticData::SendRemoteCheckNotification(rc, GetClientName(payload.value("clientId", 0u)));
     }
 }

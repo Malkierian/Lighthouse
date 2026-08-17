@@ -2,6 +2,7 @@
 
 #include <libultraship/libultraship.h>
 #include <fast/Fast3dWindow.h>
+#include "port/Settings/Setting.h"
 #include "UIWidgets.hpp"
 
 typedef enum {
@@ -113,6 +114,7 @@ struct WidgetInfo {
     WidgetFunc postFunc = nullptr;
     WidgetFunc customFunction = nullptr;
     DisableVec activeDisables = {};
+    Settings::Base* setting = nullptr;
     const char* windowName = "";
     bool isHidden = false;
     bool sameLine = false;
@@ -216,6 +218,16 @@ struct WidgetInfo {
 
     WidgetInfo& HideInSearch(bool hide) {
         hideInSearch = hide;
+        return *this;
+    }
+
+    // Binding a setting also fills in cVar, so search, reset and every not-yet-converted
+    // widget path keep working off a single name that can no longer drift.
+    WidgetInfo& Setting(Settings::Base* settingPtr) {
+        setting = settingPtr;
+        if (settingPtr != nullptr) {
+            cVar = settingPtr->Cvar();
+        }
         return *this;
     }
 

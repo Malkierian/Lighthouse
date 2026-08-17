@@ -216,6 +216,7 @@ file(GLOB_RECURSE ALL_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.inc"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/ultralib/**/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/ultralib/**/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/**/*"
@@ -225,7 +226,6 @@ file(GLOB_RECURSE ALL_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 list(FILTER ALL_FILES EXCLUDE REGEX "src/unused/")
 
 list(APPEND ALL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Resource.rc)
-
 
 # Create source groups that match the real file directory paths
 foreach(source IN LISTS ALL_FILES)

@@ -8,6 +8,7 @@
 #include "port/Rando/CustomObject/CustomObject.h"
 #include "port/Rando/Logic/Logic.h"
 #include "port/Rando/Spoiler/Spoiler.h"
+#include "port/Settings/Settings.h"
 
 #include <spdlog/fmt/fmt.h>
 
@@ -93,7 +94,7 @@ void LighthouseMenu::AddMenuRando() {
     });
 
     AddWidget(path, "Send Collection Notifications", WIDGET_CVAR_CHECKBOX)
-        .CVar(CVAR_RANDOMIZER_SETTING("RandoNotifications"))
+        .Setting(&Settings::RANDO_NOTIFICATIONS)
         .Options(CheckboxOptions().Tooltip("Sends notifications when you collect a Rando Item.").DefaultValue(1));
 
     AddWidget(path, "Manual Seed Options", WIDGET_SEPARATOR_TEXT);

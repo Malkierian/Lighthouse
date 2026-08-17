@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <libultraship/libultra/types.h>
 #include <spdlog/fmt/fmt.h>
+#include "port/Settings/Setting.h"
 
 namespace UIWidgets {
 
@@ -381,6 +382,16 @@ bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions
         CVarSetInteger(cvarName, value);
         Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
         ShipInit::Init(cvarName);
+        dirty = true;
+    }
+    return dirty;
+}
+
+bool CVarCheckboxSetting(const char* label, const CheckboxOptions& options, Settings::Int* setting) {
+    bool dirty = false;
+    bool value = setting->GetBool();
+    if (Checkbox(label, &value, options)) {
+        setting->Set(value);
         dirty = true;
     }
     return dirty;

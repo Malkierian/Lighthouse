@@ -42,6 +42,7 @@
 #include "port/Enhancements/Events/PortEnhancements.h"
 #include "port/Patches/Patches.h"
 #include "port/Save/SaveManager.h"
+#include "port/Settings/Settings.h"
 #include "port/UI/cvar_prefixes.h"
 #include "ResourceHelpers.h"
 #include "Localization/Language.h"
@@ -382,6 +383,7 @@ void GameEngine::Create(int argc, char* argv[]) {
     GfxSetNativeDimensions(292, 216);
     instance->RunExtract(argc, argv);
     instance->FinishInit();
+    Settings::Init();
     PortEnhancements_Init();
     Anchor::Init();
     SaveManager_Init();

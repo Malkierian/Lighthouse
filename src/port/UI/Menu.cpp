@@ -2,6 +2,7 @@
 #include "port/build.h"
 #include "UIWidgets.hpp"
 #include "port/Engine.h"
+#include "port/Settings/Settings.h"
 #include "cvar_prefixes.h"
 #include "LighthouseInputEditorWindow.h"
 #include <ship/window/gui/GuiMenuBar.h>
@@ -338,8 +339,15 @@ void Menu::MenuDrawItem(WidgetInfo& widget, uint32_t width, UIWidgets::Colors me
             case WIDGET_CVAR_CHECKBOX: {
                 auto options = std::static_pointer_cast<UIWidgets::CheckboxOptions>(widget.options);
                 options->color = menuThemeIndex;
-                if (UIWidgets::CVarCheckbox(UIWidgets::WrappedText(widget.name.c_str(), width).c_str(), widget.cVar,
-                                            *options)) {
+                if (widget.setting != nullptr && widget.setting->GetType() == Settings::Type::Int) {
+                    if (UIWidgets::CVarCheckboxSetting(UIWidgets::WrappedText(widget.name.c_str(), width).c_str(),
+                                                       *options, static_cast<Settings::Int*>(widget.setting))) {
+                        if (widget.callback != nullptr) {
+                            widget.callback(widget);
+                        }
+                    }
+                } else if (UIWidgets::CVarCheckbox(UIWidgets::WrappedText(widget.name.c_str(), width).c_str(), widget.cVar,
+                                                   *options)) {
                     if (widget.callback != nullptr) {
                         widget.callback(widget);
                     }
@@ -414,7 +422,15 @@ void Menu::MenuDrawItem(WidgetInfo& widget, uint32_t width, UIWidgets::Colors me
             case WIDGET_CVAR_COMBOBOX: {
                 auto options = std::static_pointer_cast<UIWidgets::ComboboxOptions>(widget.options);
                 options->color = menuThemeIndex;
-                if (UIWidgets::CVarCombobox(widget.name.c_str(), widget.cVar, options->comboMap, *options)) {
+                if (widget.setting != nullptr && widget.setting->GetType() == Settings::Type::Int) {
+                    if (UIWidgets::CVarComboboxSetting(widget.name.c_str(),
+                                                       static_cast<Settings::Int*>(widget.setting), options->comboMap,
+                                                       *options)) {
+                        if (widget.callback != nullptr) {
+                            widget.callback(widget);
+                        }
+                    }
+                } else if (UIWidgets::CVarCombobox(widget.name.c_str(), widget.cVar, options->comboMap, *options)) {
                     if (widget.callback != nullptr) {
                         widget.callback(widget);
                     }
@@ -564,6 +580,10 @@ void Menu::Draw() {
     DrawElement();
     // Sync up the IsVisible flag if it was changed by ImGui
     SyncVisibilityConsoleVariable();
+    // Widgets still write the CVar store directly, so pick up anything the user just
+    // changed before the next gameplay frame reads a cached setting. Only runs while
+    // the menu is open. Removable once widgets are bound to settings (phase 3).
+    Settings::RefreshAll();
 }
 
 static bool freshOpen = true;

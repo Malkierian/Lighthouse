@@ -5,12 +5,11 @@
 #include "port/Rando/Logic/Logic.h"
 #include "port/Enhancements/Events/Hooks/Events.h"
 #include "port/Rando/CustomObject/CustomObject.h"
+#include "port/Settings/Settings.h"
 
 #include "include/core1/sns.h"
 
 #define WIDGET_TEXT_COLOR(id) UIWidgets::ColorValues.at(id)
-#define CVAR_NAME_SHOW_COLLISION_NOTIFICATIONS "gRandoSettings.RandoNotifications"
-#define CVAR_SHOW_COLLISION_NOTIFICATIONS CVarGetInteger(CVAR_NAME_SHOW_COLLISION_NOTIFICATIONS, 0)
 
 extern "C" {
 extern ActorArray* suBaddieActorArray;
@@ -190,7 +189,7 @@ static void EmitCheckNotification(RandoCheckId randoCheckId, const std::string& 
 }
 
 void Rando::StaticData::SendCollisionNotification(RandoCheckId randoCheckId) {
-    if (CVAR_SHOW_COLLISION_NOTIFICATIONS) {
+    if (Settings::RANDO_NOTIFICATIONS) {
         EmitCheckNotification(randoCheckId, "You");
     }
 };

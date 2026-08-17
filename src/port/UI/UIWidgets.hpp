@@ -9,8 +9,9 @@
 #include <imgui.h>
 #include <libultraship/libultraship.h>
 #include <unordered_map>
-#include "src/port/ShipUtils.h"
-#include "src/port/ShipInit.hpp"
+#include "port/ShipUtils.h"
+#include "port/ShipInit.hpp"
+#include "port/Settings/Setting.h"
 
 namespace UIWidgets {
 
@@ -623,6 +624,7 @@ void PopStyleCheckbox();
 void RenderText(ImVec2 pos, const char* text, const char* text_end, bool hide_text_after_hash);
 bool Checkbox(const char* label, bool* v, const CheckboxOptions& options = {});
 bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions& options = {});
+bool CVarCheckboxSetting(const char* label, const CheckboxOptions& options, Settings::Int* setting);
 
 void PushStyleCombobox(const ImVec4& color);
 void PushStyleCombobox(Colors color = Colors::LightBlue);
@@ -1021,6 +1023,42 @@ bool CVarCombobox(const char* label, const char* cvarName, const char* (&comboAr
         CVarSetInteger(cvarName, value);
         Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
         ShipInit::Init(cvarName);
+        dirty = true;
+    }
+    return dirty;
+}
+
+template <typename T = int32_t>
+bool CVarComboboxSetting(const char* label, Settings::Int* setting,
+                         const std::unordered_map<T, const char*>& comboMap, const ComboboxOptions& options = {}) {
+    bool dirty = false;
+    int32_t value = setting->Get();
+    if (Combobox<T>(label, &value, comboMap, options)) {
+        setting->Set(value);
+        dirty = true;
+    }
+    return dirty;
+}
+
+template <typename T = int32_t>
+bool CVarComboboxSetting(const char* label, Settings::Int* setting, const std::vector<const char*>& comboVector,
+                         const ComboboxOptions& options = {}) {
+    bool dirty = false;
+    int32_t value = setting->Get();
+    if (Combobox<T>(label, &value, comboVector, options)) {
+        setting->Set(value);
+        dirty = true;
+    }
+    return dirty;
+}
+
+template <typename T = int32_t, size_t N>
+bool CVarComboboxSetting(const char* label, Settings::Int* setting, const char* (&comboArray)[N],
+                         const ComboboxOptions& options = {}) {
+    bool dirty = false;
+    int32_t value = setting->Get();
+    if (Combobox<T>(label, &value, comboArray, options)) {
+        setting->Set(value);
         dirty = true;
     }
     return dirty;
