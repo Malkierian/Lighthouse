@@ -41,6 +41,7 @@
 #include "port/Enhancements/Events/PortEnhancements.h"
 #include "port/Patches/Patches.h"
 #include "port/Save/SaveManager.h"
+#include "port/Settings/Registry.h"
 #include "port/UI/cvar_prefixes.h"
 #include "ResourceHelpers.h"
 #include "Localization/Language.h"
@@ -380,6 +381,7 @@ void GameEngine::Create(int argc, char* argv[]) {
     GfxSetNativeDimensions(292, 216);
     instance->RunExtract(argc, argv);
     instance->FinishInit();
+    Settings::Load();
     PortEnhancements_Init();
     Anchor::Init();
     SaveManager_Init();
@@ -430,6 +432,8 @@ void GameEngine::Destroy() {
 }
 
 void GameEngine::StartFrame() const {
+    Settings::FlushIfDirty();
+
     using Ship::KbScancode;
     const int32_t dwScancode = this->context->GetWindow()->GetLastScancode();
     this->context->GetWindow()->SetLastScancode(-1);

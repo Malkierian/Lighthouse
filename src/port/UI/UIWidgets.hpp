@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include "src/port/ShipUtils.h"
 #include "src/port/ShipInit.hpp"
+#include "port/Settings/Setting.h"
 
 namespace UIWidgets {
 
@@ -109,6 +110,7 @@ struct WidgetOptions {
     const char* tooltip = "";
     bool disabled = false;
     const char* disabledTooltip = "";
+    Settings::Base* setting = nullptr;
 
     WidgetOptions& Tooltip(const char* tooltip_) {
         tooltip = tooltip_;
@@ -297,6 +299,15 @@ struct CheckboxOptions : WidgetOptions {
     CheckboxOptions& Padding(ImVec2 padding_) {
         padding = padding_;
         return *this;
+    }
+
+    CheckboxOptions& Setting(Settings::Bool* settingObj) {
+        setting = settingObj;
+        return *this;
+    }
+
+    Settings::Bool* GetSetting() const {
+        return static_cast<Settings::Bool*>(setting);
     }
 };
 
@@ -621,6 +632,7 @@ void PopStyleCheckbox();
 void RenderText(ImVec2 pos, const char* text, const char* text_end, bool hide_text_after_hash);
 bool Checkbox(const char* label, bool* v, const CheckboxOptions& options = {});
 bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions& options = {});
+bool SettingCheckbox(const char* label, const CheckboxOptions& options);
 
 void PushStyleCombobox(const ImVec4& color);
 void PushStyleCombobox(Colors color = Colors::LightBlue);

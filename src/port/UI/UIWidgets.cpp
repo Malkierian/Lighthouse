@@ -359,6 +359,17 @@ bool Checkbox(const char* _label, bool* value, const CheckboxOptions& options) {
     return pressed;
 }
 
+bool SettingCheckbox(const char* label, const CheckboxOptions& options) {
+    bool dirty = false;
+    Settings::Bool* setting = options.GetSetting();
+    bool value = setting->Get();
+    if (Checkbox(label, &value, options)) {
+        *setting = value;
+        dirty = true;
+    }
+    return dirty;
+}
+
 bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions& options) {
     bool dirty = false;
     bool value = (bool)CVarGetInteger(cvarName, options.defaultValue);
