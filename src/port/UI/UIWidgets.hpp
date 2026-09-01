@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include "src/port/ShipUtils.h"
 #include "src/port/ShipInit.hpp"
-#include "port/Settings/Setting.h"
+#include "port/Prefs/Pref.h"
 
 namespace UIWidgets {
 
@@ -110,7 +110,7 @@ struct WidgetOptions {
     const char* tooltip = "";
     bool disabled = false;
     const char* disabledTooltip = "";
-    Settings::Base* setting = nullptr;
+    Prefs::Base* setting = nullptr;
 
     WidgetOptions& Tooltip(const char* tooltip_) {
         tooltip = tooltip_;
@@ -301,13 +301,13 @@ struct CheckboxOptions : WidgetOptions {
         return *this;
     }
 
-    CheckboxOptions& Setting(Settings::Bool* settingObj) {
+    CheckboxOptions& Setting(Prefs::Bool* settingObj) {
         setting = settingObj;
         return *this;
     }
 
-    Settings::Bool* GetSetting() const {
-        return static_cast<Settings::Bool*>(setting);
+    Prefs::Bool* GetSetting() const {
+        return static_cast<Prefs::Bool*>(setting);
     }
 };
 
@@ -354,10 +354,6 @@ struct IntSliderOptions : WidgetOptions {
     bool showButtons = true;
     const char* format = "%d";
     int32_t step = 1;
-    int32_t min = 1;
-    int32_t max = 10;
-    int32_t defaultValue = 1;
-    bool clamp = true;
     ComponentAlignments alignment = ComponentAlignments::Left;
     LabelPositions labelPosition = LabelPositions::Above;
     Colors color = Colors::Gray;
@@ -376,21 +372,6 @@ struct IntSliderOptions : WidgetOptions {
 
     IntSliderOptions& Step(int32_t step_) {
         step = step_;
-        return *this;
-    }
-
-    IntSliderOptions& Min(int32_t min_) {
-        min = min_;
-        return *this;
-    }
-
-    IntSliderOptions& Max(int32_t max_) {
-        max = max_;
-        return *this;
-    }
-
-    IntSliderOptions& DefaultValue(int32_t defaultValue_) {
-        defaultValue = defaultValue_;
         return *this;
     }
 
@@ -418,10 +399,14 @@ struct IntSliderOptions : WidgetOptions {
         size = size_;
         return *this;
     }
-
-    IntSliderOptions& Clamp(bool clamp_) {
-        clamp = clamp_;
+    
+    IntSliderOptions& Setting(Prefs::Int32* setting_) {
+        setting = setting_;
         return *this;
+    }
+
+    Prefs::Int32* GetSetting() const {
+        return static_cast<Prefs::Int32*>(setting);
     }
 };
 
@@ -429,10 +414,6 @@ struct FloatSliderOptions : WidgetOptions {
     bool showButtons = true;
     const char* format = "%f";
     float step = 0.01f;
-    float min = 0.01f;
-    float max = 10.0f;
-    float defaultValue = 1.0f;
-    bool clamp = true;
     bool isPercentage = false; // Multiplies visual value by 100
     ComponentAlignments alignment = ComponentAlignments::Left;
     LabelPositions labelPosition = LabelPositions::Above;
@@ -455,21 +436,6 @@ struct FloatSliderOptions : WidgetOptions {
         return *this;
     }
 
-    FloatSliderOptions& Min(float min_) {
-        min = min_;
-        return *this;
-    }
-
-    FloatSliderOptions& Max(float max_) {
-        max = max_;
-        return *this;
-    }
-
-    FloatSliderOptions& DefaultValue(float defaultValue_) {
-        defaultValue = defaultValue_;
-        return *this;
-    }
-
     FloatSliderOptions& ComponentAlignment(ComponentAlignments alignment_) {
         alignment = alignment_;
         return *this;
@@ -483,8 +449,6 @@ struct FloatSliderOptions : WidgetOptions {
     FloatSliderOptions& IsPercentage(bool isPercentage_ = true) {
         isPercentage = isPercentage_;
         format = "%.0f%%";
-        min = 0.0f;
-        max = 1.0f;
         return *this;
     }
 
@@ -503,9 +467,13 @@ struct FloatSliderOptions : WidgetOptions {
         return *this;
     }
 
-    FloatSliderOptions& Clamp(bool clamp_) {
-        clamp = clamp_;
+    FloatSliderOptions& Setting(Prefs::Float* setting_) {
+        setting = setting_;
         return *this;
+    }
+
+    Prefs::Float* GetSetting() const {
+        return static_cast<Prefs::Float*>(setting);
     }
 };
 
@@ -532,6 +500,10 @@ struct RadioButtonsOptions : WidgetOptions {
     RadioButtonsOptions& DefaultIndex(int32_t defaultIndex_) {
         defaultIndex = defaultIndex_;
         return *this;
+    }
+
+    Prefs::Int32* GetSetting() const {
+        return static_cast<Prefs::Int32*>(setting);
     }
 };
 
@@ -607,6 +579,10 @@ struct InputOptions : WidgetOptions {
         errorText = errorText_;
         return *this;
     }
+
+    Prefs::String* GetSetting() const {
+        return static_cast<Prefs::String*>(setting);
+    }
 };
 
 void PushStyleMenu(const ImVec4& color);
@@ -632,6 +608,7 @@ void PopStyleCheckbox();
 void RenderText(ImVec2 pos, const char* text, const char* text_end, bool hide_text_after_hash);
 bool Checkbox(const char* label, bool* v, const CheckboxOptions& options = {});
 bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions& options = {});
+bool PrefCheckbox(const char* label, const CheckboxOptions& options = {});
 bool SettingCheckbox(const char* label, const CheckboxOptions& options);
 
 void PushStyleCombobox(const ImVec4& color);
@@ -823,9 +800,9 @@ bool CVarCombobox(const char* label, const char* cvarName, const char* (&comboAr
 void PushStyleSlider(Colors color = Colors::LightBlue);
 void PopStyleSlider();
 bool SliderInt(const char* label, int32_t* value, const IntSliderOptions& options = {});
-bool CVarSliderInt(const char* label, const char* cvarName, const IntSliderOptions& options = {});
+bool PrefSliderInt(const char* label, const IntSliderOptions& options = {});
 bool SliderFloat(const char* label, float* value, const FloatSliderOptions& options = {});
-bool CVarSliderFloat(const char* label, const char* cvarName, const FloatSliderOptions& options = {});
+bool PrefSliderFloat(const char* label, const FloatSliderOptions& options = {});
 bool InputString(const char* label, std::string* value, const InputOptions& options = {});
 bool CVarInputString(const char* label, const char* cvarName, const InputOptions& options = {});
 bool InputInt(const char* label, int32_t* value, const InputOptions& options = {});

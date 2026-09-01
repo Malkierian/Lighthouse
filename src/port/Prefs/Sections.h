@@ -5,7 +5,7 @@
 // A setting's section does double duty: it is the preset section the setting belongs to, and
 // it names the root JSON object the value is stored under. Block names match the existing
 // preset block keys in Presets.cpp so preset files keep their current shape.
-enum SettingSection : uint8_t {
+enum PrefSection : uint8_t {
     SECTION_SETTINGS,
     SECTION_ENHANCEMENTS,
     SECTION_RANDO,
@@ -16,8 +16,8 @@ enum SettingSection : uint8_t {
     SECTION_COUNT,
 };
 
-namespace Settings {
+namespace Prefs {
 
-const char* SectionBlock(SettingSection section);
+const char* SectionBlock(PrefSection section);
 
-} // namespace Settings
+} // namespace Prefs

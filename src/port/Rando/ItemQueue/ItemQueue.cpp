@@ -11,7 +11,7 @@
 #include "port/Rando/CheckTracker/CheckTracker.h"
 #include "port/Rando/Helpers/Helpers.h"
 #include "port/Rando/Logic/Logic.h"
-#include "port/Rando/RandoSettings.h"
+#include "port/Prefs/Sections/RandoPrefs.h"
 
 extern "C" {
 #include "actor.h"
@@ -52,7 +52,7 @@ void ItemQueue::Process() {
     RandoSaveCheck randoSaveCheck = RANDO_SAVE_CHECKS[randoCheckId];
     if (!randoSaveCheck.received) {
         ItemQueue::GiveItem(randoSaveCheck.randoItemId);
-        if (CVAR_SHOW_RANDO_NOTIFICATIONS) {
+        if (Prefs::Rando::Notifications) {
             Rando::Helpers::SendNotification(randoSaveCheck.randoItemId, "You");
         }
         RANDO_SAVE_CHECKS[randoCheckId].received = true;

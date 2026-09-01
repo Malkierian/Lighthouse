@@ -1,4 +1,4 @@
-#include "port/Settings/Registry.h"
+#include "Registry.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -10,9 +10,9 @@
 
 #include <libultraship/libultraship.h>
 
-#include "port/Settings/Setting.h"
+#include "Pref.h"
 
-namespace Settings {
+namespace Prefs {
 
 namespace {
 
@@ -26,7 +26,7 @@ std::string FilePath() {
     return Ship::Context::GetPathRelativeToAppDirectory(kFileName);
 }
 
-// Both containers are intentionally leaked. Settings have static lifetime, so a registry
+// Both containers are intentionally leaked. Prefs have static lifetime, so a registry
 // destroyed first would leave their destructors touching freed memory at exit.
 nlohmann::json& Doc() {
     static nlohmann::json* doc = new nlohmann::json(nlohmann::json::object());
@@ -158,7 +158,7 @@ void FlushIfDirty() {
     }
 }
 
-Base* Find(SettingSection section, const std::string& path) {
+Base* Find(PrefSection section, const std::string& path) {
     const auto it = std::find_if(AllSettings().begin(), AllSettings().end(), [section, &path](const Base* setting) {
         return setting->Section() == section && setting->Path() == path;
     });
@@ -172,4 +172,4 @@ Base* FindByCVar(const std::string& cvar) {
     return it != AllSettings().end() ? *it : nullptr;
 }
 
-} // namespace Settings
+} // namespace Prefs

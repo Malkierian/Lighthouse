@@ -5,9 +5,9 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "port/Settings/Sections.h"
+#include "Pref.h"
 
-namespace Settings {
+namespace Prefs {
 
 class Base;
 
@@ -18,11 +18,11 @@ void FlushIfDirty();
 void MarkDirty();
 bool IsDirty();
 
-Base* Find(SettingSection section, const std::string& path);
+Base* Find(PrefSection section, const std::string& path);
 Base* FindByCVar(const std::string& cvar);
 
 void StoreNode(const Base& setting);
 void EraseNode(const Base& setting);
 nlohmann::json& Document();
 
-} // namespace Settings
+} // namespace Prefs

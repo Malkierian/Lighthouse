@@ -11,7 +11,6 @@
 #include <cmath>
 
 #include "UIWidgets.hpp"
-#include "UIWidgets.hpp"
 #include "LighthouseGui.hpp"
 
 using namespace UIWidgets;
@@ -120,11 +119,11 @@ void InputViewer::DrawElement() {
     ImVec2 size = ImGui::GetMainViewport()->WorkSize;
 
 #ifdef __WIIU__
-    const float scale = CVarGetFloat(CVAR_INPUT_VIEWER("Scale"), 1.0f) * 2.0f;
+    const float scale = Prefs::Settings::InputViewer::Scale * 2.0f;
 #else
-    const float scale = CVarGetFloat(CVAR_INPUT_VIEWER("Scale"), 1.0f);
+    const float scale = Prefs::Settings::InputViewer::Scale;
 #endif
-    const int showAnalogAngles = CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Enabled"), 0);
+    const int showAnalogAngles = Prefs::Settings::InputViewer::AnalogAngles::Enabled;
     const int buttonOutlineMode = CVarGetInteger(CVAR_INPUT_VIEWER("ButtonOutlineMode"), BUTTON_OUTLINE_NOT_PRESSED);
     const bool useGlobalOutlineMode = CVarGetInteger(CVAR_INPUT_VIEWER("UseGlobalButtonOutlineMode"), 1);
 
@@ -282,25 +281,6 @@ void InputViewer::DrawElement() {
                              ? buttonOutlineMode
                              : CVarGetInteger(CVAR_INPUT_VIEWER("DpadOutlineMode"), BUTTON_OUTLINE_NOT_PRESSED));
         }
-        // Lighthouse Unused
-        // Modifier 1
-        // if (CVarGetInteger(CVAR_INPUT_VIEWER("Mod1"), 0)) {
-        //    ImGui::SetNextItemAllowOverlap();
-        //    ImGui::SetCursorPos(aPos);
-        //    RenderButton("Modifier-1", "Modifier-1 Outline", pads[0].button & BTN_CUSTOM_MODIFIER1, scaledBGSize,
-        //        useGlobalOutlineMode
-        //        ? buttonOutlineMode
-        //        : CVarGetInteger(CVAR_INPUT_VIEWER("Mod1OutlineMode"), BUTTON_OUTLINE_NOT_PRESSED));
-        //}
-        // Modifier 2
-        // if (CVarGetInteger(CVAR_INPUT_VIEWER("Mod2"), 0)) {
-        //    ImGui::SetNextItemAllowOverlap();
-        //    ImGui::SetCursorPos(aPos);
-        //    RenderButton("Modifier-2", "Modifier-2 Outline", pads[0].button & BTN_CUSTOM_MODIFIER2, scaledBGSize,
-        //        useGlobalOutlineMode
-        //        ? buttonOutlineMode
-        //        : CVarGetInteger(CVAR_INPUT_VIEWER("Mod2OutlineMode"), BUTTON_OUTLINE_NOT_PRESSED));
-        //}
 
         const bool analogStickIsInDeadzone = !pads[0].stick_x && !pads[0].stick_y;
         const bool rightStickIsInDeadzone = !pads[0].right_stick_x && !pads[0].right_stick_y;
@@ -308,7 +288,7 @@ void InputViewer::DrawElement() {
         // Analog Stick
         const int analogOutlineMode =
             CVarGetInteger(CVAR_INPUT_VIEWER("AnalogStick.OutlineMode"), STICK_MODE_ALWAYS_SHOWN);
-        const int32_t maxStickDistance = CVarGetInteger(CVAR_INPUT_VIEWER("AnalogStick.Movement"), 12);
+        const int32_t maxStickDistance = Prefs::Settings::InputViewer::AnalogStick::Movement;
         if (analogOutlineMode == STICK_MODE_ALWAYS_SHOWN ||
             (analogOutlineMode == STICK_MODE_HIDDEN_IN_DEADZONE && !analogStickIsInDeadzone)) {
             ImGui::SetNextItemAllowOverlap();
@@ -329,7 +309,7 @@ void InputViewer::DrawElement() {
         }
 
         // Right Stick
-        const int32_t maxRightStickDistance = CVarGetInteger(CVAR_INPUT_VIEWER("RightStick.Movement"), 7);
+        const int32_t maxRightStickDistance = Prefs::Settings::InputViewer::RightStick::Movement;
         const int rightOutlineMode =
             CVarGetInteger(CVAR_INPUT_VIEWER("RightStick.OutlineMode"), STICK_MODE_ALWAYS_HIDDEN);
         if (rightOutlineMode == STICK_MODE_ALWAYS_SHOWN ||
@@ -361,33 +341,6 @@ void InputViewer::DrawElement() {
             ImGui::GetFont()->Scale *= scale * CVarGetFloat(CVAR_INPUT_VIEWER("AnalogAngles.Scale"), 1.0f);
             ImGui::PushFont(ImGui::GetFont());
 
-            // Calculate polar R coordinate from X and Y angles, squared to avoid sqrt
-            const int32_t rSquared = pads[0].stick_x * pads[0].stick_x + pads[0].stick_y * pads[0].stick_y;
-
-            // ESS range
-            const int range1Min = CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range1.Min"), 8);
-            const int range1Max = CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range1.Max"), 27);
-            // Walking speed range
-            const int range2Min = CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range2.Min"), 27);
-            const int range2Max = CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range2.Max"), 62);
-
-            // Push color based on angle ranges
-            if (CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range1.Enabled"), 0) &&
-                (rSquared >= (range1Min * range1Min)) && (rSquared < (range1Max * range1Max))) {
-                ImGui::PushStyleColor(ImGuiCol_Text,
-                                      VecFromRGBA8(CVarGetColor(CVAR_INPUT_VIEWER("AnalogAngles.Range1.Color.Value"),
-                                                                range1ColorDefault)));
-            } else if (CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range2.Enabled"), 0) &&
-                       (rSquared >= (range2Min * range2Min)) && (rSquared < (range2Max * range2Max))) {
-                ImGui::PushStyleColor(ImGuiCol_Text,
-                                      VecFromRGBA8(CVarGetColor(CVAR_INPUT_VIEWER("AnalogAngles.Range2.Color.Value"),
-                                                                range2ColorDefault)));
-            } else {
-                ImGui::PushStyleColor(
-                    ImGuiCol_Text,
-                    VecFromRGBA8(CVarGetColor(CVAR_INPUT_VIEWER("AnalogAngles.TextColor.Value"), textColorDefault)));
-            }
-
             // Render text
             ImGui::Text("X: %-3d  Y: %-3d", pads[0].stick_x, pads[0].stick_y);
             // Restore original color
@@ -410,12 +363,9 @@ InputViewerSettingsWindow::~InputViewerSettingsWindow() {
 
 void InputViewerSettingsWindow::DrawElement() {
     // gInputViewer.Scale
-    CVarSliderFloat("Input Viewer Scale: %.2f", CVAR_INPUT_VIEWER("Scale"),
-                    FloatSliderOptions()
+    PrefSliderFloat("Input Viewer Scale: %.2f",
+                    FloatSliderOptions({.setting = &Prefs::Settings::InputViewer::Scale})
                         .Color(THEME_COLOR)
-                        .DefaultValue(1.0f)
-                        .Min(0.1f)
-                        .Max(5.0f)
                         .ShowButtons(true)
                         .Tooltip("Sets the on screen size of the input viewer"));
 
@@ -592,14 +542,10 @@ void InputViewerSettingsWindow::DrawElement() {
                 .DefaultIndex(STICK_MODE_ALWAYS_SHOWN)
                 .Tooltip(
                     "Determines the conditions under which the analog stick outline/background texture is visible."));
-
         // gInputViewer.AnalogStick.Movement
-        CVarSliderInt("Analog Stick Movement: %dpx", CVAR_INPUT_VIEWER("AnalogStick.Movement"),
-                      IntSliderOptions()
+        PrefSliderInt("Analog Stick Movement: %dpx",
+                      IntSliderOptions({.setting = &Prefs::Settings::InputViewer::AnalogStick::Movement})
                           .Color(THEME_COLOR)
-                          .Min(0)
-                          .Max(200)
-                          .DefaultValue(12)
                           .ShowButtons(true)
                           .Tooltip("Sets the distance to move the analog stick in the input viewer. Useful for custom "
                                    "input viewers."));
@@ -616,7 +562,6 @@ void InputViewerSettingsWindow::DrawElement() {
                 .Tooltip(
                     "Determines the conditions under which the moving layer of the right stick texture is visible."));
 
-        // gInputViewer.RightStick.OutlineMode
         CVarCombobox(
             "Right Stick Outline/Background Visibility", CVAR_INPUT_VIEWER("RightStick.OutlineMode"), stickModeOptions,
             ComboboxOptions()
@@ -625,14 +570,11 @@ void InputViewerSettingsWindow::DrawElement() {
                 .Tooltip(
                     "Determines the conditions under which the right stick outline/background texture is visible."));
 
-        // gInputViewer.RightStick.Movement
-        CVarSliderInt(
-            "Right Stick Movement: %dpx", CVAR_INPUT_VIEWER("RightStick.Movement"),
+        PrefSliderInt(
+            "Right Stick Movement: %dpx",
             IntSliderOptions()
+                .Setting(&Prefs::Settings::InputViewer::RightStick::Movement)
                 .Color(THEME_COLOR)
-                .Min(0)
-                .Max(200)
-                .DefaultValue(7)
                 .ShowButtons(true)
                 .Tooltip(
                     "Sets the distance to move the right stick in the input viewer. Useful for custom input viewers."));
@@ -640,60 +582,27 @@ void InputViewerSettingsWindow::DrawElement() {
     }
 
     if (ImGui::CollapsingHeader("Analog Angle Values")) {
-        // gAnalogAngles
-        CVarCheckbox(
-            "Show Analog Stick Angle Values", CVAR_INPUT_VIEWER("AnalogAngles.Enabled"),
-            CheckboxOptions().Color(THEME_COLOR).Tooltip("Displays analog stick angle values in the input viewer"));
-        if (CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Enabled"), 0)) {
-            // gInputViewer.AnalogAngles.TextColor
+        PrefCheckbox("Show Analog Stick Angle Values", 
+            CheckboxOptions().Color(THEME_COLOR).Tooltip("Displays analog stick angle values in the input viewer")
+                .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Enabled));
+        if (Prefs::Settings::InputViewer::AnalogAngles::Enabled) {
             CVarColorPicker("Text Color", CVAR_INPUT_VIEWER("AnalogAngles.TextColor"), textColorDefault, true,
                             ColorPickerRandomButton | ColorPickerResetButton);
-            // gAnalogAngleScale
-            CVarSliderFloat("Angle Text Scale: %.2f%%", CVAR_INPUT_VIEWER("AnalogAngles.Scale"),
+
+            PrefSliderFloat("Angle Text Scale: %.2f%%",
                             FloatSliderOptions()
+                                .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Scale)
                                 .Color(THEME_COLOR)
                                 .IsPercentage()
-                                .Min(0.1f)
-                                .Max(5.0f)
-                                .DefaultValue(1.0f)
                                 .ShowButtons(true));
-            // gInputViewer.AnalogAngles.Offset
-            CVarSliderInt("Angle Text Offset: %dpx", CVAR_INPUT_VIEWER("AnalogAngles.Offset"),
+
+            PrefSliderInt("Angle Text Offset: %dpx",
                           IntSliderOptions()
+                              .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Offset)
                               .Color(THEME_COLOR)
-                              .Min(0)
-                              .Max(400)
-                              .DefaultValue(0)
                               .ShowButtons(true)
                               .Tooltip("Sets the distance to move the right stick in the input viewer. Useful for "
                                        "custom input viewers."));
-            UIWidgets::Separator(true, true);
-            // gInputViewer.AnalogAngles.Range1.Enabled
-            CVarCheckbox(
-                "Highlight ESS Position", CVAR_INPUT_VIEWER("AnalogAngles.Range1.Enabled"),
-                CheckboxOptions()
-                    .Color(THEME_COLOR)
-                    .Tooltip(
-                        "Highlights the angle value text when the analog stick is in ESS position (on flat ground)"));
-            if (CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range1.Enabled"), 0)) {
-                // gInputViewer.AnalogAngles.Range1.Color
-                CVarColorPicker("ESS Color", CVAR_INPUT_VIEWER("AnalogAngles.Range1.Color"), range1ColorDefault, true,
-                                ColorPickerRandomButton | ColorPickerResetButton);
-            }
-
-            UIWidgets::Separator(true, true);
-            // gInputViewer.AnalogAngles.Range2.Enabled
-            CVarCheckbox("Highlight Walking Speed Angles", CVAR_INPUT_VIEWER("AnalogAngles.Range2.Enabled"),
-                         CheckboxOptions()
-                             .Color(THEME_COLOR)
-                             .Tooltip("Highlights the angle value text when the analog stick is at an angle that would "
-                                      "produce a walking speed (on flat ground)\n\n"
-                                      "Useful for 1.0 Empty Jumpslash Quick Put Away"));
-            if (CVarGetInteger(CVAR_INPUT_VIEWER("AnalogAngles.Range2.Enabled"), 0)) {
-                // gInputViewer.AnalogAngles.Range2.Color
-                CVarColorPicker("Walking Speed Color", CVAR_INPUT_VIEWER("AnalogAngles.Range2.Color"),
-                                range2ColorDefault, true, ColorPickerRandomButton | ColorPickerResetButton);
-            }
         }
     }
     PopStyleHeader();

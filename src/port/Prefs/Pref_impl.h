@@ -10,7 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
-#include "port/Settings/Setting.h"
+#include "Pref.h"
 
 // Global scope so nlohmann finds these by ADL — Color_RGBA8 is a global typedef.
 inline void to_json(nlohmann::json& j, const Color_RGBA8& c) {
@@ -24,7 +24,7 @@ inline void from_json(const nlohmann::json& j, Color_RGBA8& c) {
     c.a = j.at("a").get<uint8_t>();
 }
 
-namespace Settings {
+namespace Prefs {
 
 template <typename V> bool Scalar<V>::Validate(V& value) const {
     if constexpr (std::is_arithmetic_v<V>) {
@@ -107,4 +107,4 @@ template <typename V> bool Scalar<V>::Read(const nlohmann::json& in) {
     return true;
 }
 
-} // namespace Settings
+} // namespace Prefs

@@ -381,7 +381,7 @@ void GameEngine::Create(int argc, char* argv[]) {
     GfxSetNativeDimensions(292, 216);
     instance->RunExtract(argc, argv);
     instance->FinishInit();
-    Settings::Load();
+    Prefs::Load();
     PortEnhancements_Init();
     Anchor::Init();
     SaveManager_Init();
@@ -432,7 +432,7 @@ void GameEngine::Destroy() {
 }
 
 void GameEngine::StartFrame() const {
-    Settings::FlushIfDirty();
+    Prefs::FlushIfDirty();
 
     using Ship::KbScancode;
     const int32_t dwScancode = this->context->GetWindow()->GetLastScancode();

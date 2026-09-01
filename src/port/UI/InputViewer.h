@@ -44,3 +44,29 @@ public:
     InputViewerSettingsWindow();
     ~InputViewerSettingsWindow();
 };
+
+// Prefs
+#include "port/Prefs/Pref.h"
+
+namespace Prefs::Settings {
+
+namespace InputViewer {
+extern Prefs::Float Scale;
+
+namespace AnalogAngles {
+extern Prefs::Bool Enabled;
+extern Prefs::Int32 Offset;
+extern Prefs::Float Scale;
+} // namespace AnalogAngles
+
+namespace AnalogStick {
+extern Prefs::Int32 Movement;
+} // namespace AnalogStick
+
+namespace RightStick {
+extern Prefs::Int32 Movement;
+} // namespace RightStick
+
+} // namespace InputViewer
+
+} // namespace Prefs::Settings

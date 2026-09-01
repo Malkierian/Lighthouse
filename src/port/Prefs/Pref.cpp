@@ -1,12 +1,12 @@
-#include "port/Settings/Setting.h"
+#include "Pref.h"
 
 #include <algorithm>
 
-#include "port/Settings/Registry.h"
-#include "port/Settings/Setting_impl.h"
+#include "Registry.h"
+#include "Pref_impl.h"
 #include "port/ShipInit.hpp"
 
-namespace Settings {
+namespace Prefs {
 
 namespace {
 constexpr const char* kSectionBlocks[SECTION_COUNT] = {
@@ -14,11 +14,11 @@ constexpr const char* kSectionBlocks[SECTION_COUNT] = {
 };
 } // namespace
 
-const char* SectionBlock(SettingSection section) {
+const char* SectionBlock(PrefSection section) {
     return section < SECTION_COUNT ? kSectionBlocks[section] : "";
 }
 
-Base::Base(SettingSection section, std::string path, const char* cvar)
+Base::Base(PrefSection section, std::string path, const char* cvar)
     : mSection(section), mPath(std::move(path)), mCvar(cvar) {
     mFullPath = std::string(SectionBlock(mSection)) + "." + mPath;
     AllSettings().push_back(this);
@@ -73,4 +73,4 @@ template class Scalar<std::map<std::string, int32_t>>;
 template class Scalar<std::map<std::string, float>>;
 template class Scalar<std::map<std::string, std::string>>;
 
-} // namespace Settings
+} // namespace Prefs
