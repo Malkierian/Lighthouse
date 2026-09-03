@@ -364,7 +364,7 @@ InputViewerSettingsWindow::~InputViewerSettingsWindow() {
 void InputViewerSettingsWindow::DrawElement() {
     // gInputViewer.Scale
     PrefSliderFloat("Input Viewer Scale: %.2f",
-                    FloatSliderOptions({.setting = &Prefs::Settings::InputViewer::Scale})
+                    FloatSliderOptions({.pref = &Prefs::Settings::InputViewer::Scale})
                         .Color(THEME_COLOR)
                         .ShowButtons(true)
                         .Tooltip("Sets the on screen size of the input viewer"));
@@ -544,7 +544,7 @@ void InputViewerSettingsWindow::DrawElement() {
                     "Determines the conditions under which the analog stick outline/background texture is visible."));
         // gInputViewer.AnalogStick.Movement
         PrefSliderInt("Analog Stick Movement: %dpx",
-                      IntSliderOptions({.setting = &Prefs::Settings::InputViewer::AnalogStick::Movement})
+                      IntSliderOptions({.pref = &Prefs::Settings::InputViewer::AnalogStick::Movement})
                           .Color(THEME_COLOR)
                           .ShowButtons(true)
                           .Tooltip("Sets the distance to move the analog stick in the input viewer. Useful for custom "

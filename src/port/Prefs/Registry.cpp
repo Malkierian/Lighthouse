@@ -33,11 +33,11 @@ nlohmann::json& Doc() {
     return *doc;
 }
 
-nlohmann::json::json_pointer PointerFor(const Base& setting) {
+nlohmann::json::json_pointer PointerFor(const Base& pref) {
     std::string pointer = "/";
-    pointer += SectionBlock(setting.Section());
+    pointer += SectionBlock(pref.Section());
 
-    const std::string& path = setting.Path();
+    const std::string& path = pref.Path();
     size_t start = 0;
     while (start <= path.size()) {
         const size_t dot = path.find('.', start);
@@ -72,12 +72,12 @@ bool IsDirty() {
     return sDirty;
 }
 
-void StoreNode(const Base& setting) {
-    setting.Write(Doc()[PointerFor(setting)]);
+void StoreNode(const Base& pref) {
+    pref.Write(Doc()[PointerFor(pref)]);
 }
 
-void EraseNode(const Base& setting) {
-    const auto pointer = PointerFor(setting);
+void EraseNode(const Base& pref) {
+    const auto pointer = PointerFor(pref);
     if (!Doc().contains(pointer)) {
         return;
     }
@@ -121,12 +121,12 @@ void Load() {
 
     Doc()["version"] = kDocumentVersion;
 
-    for (Base* setting : AllSettings()) {
-        const auto pointer = PointerFor(*setting);
+    for (Base* pref : AllSettings()) {
+        const auto pointer = PointerFor(*pref);
         if (!Doc().contains(pointer)) {
             continue;
         }
-        setting->ApplyLoaded(Doc()[pointer]);
+        pref->ApplyLoaded(Doc()[pointer]);
     }
 
     sLoaded = true;
@@ -159,15 +159,15 @@ void FlushIfDirty() {
 }
 
 Base* Find(PrefSection section, const std::string& path) {
-    const auto it = std::find_if(AllSettings().begin(), AllSettings().end(), [section, &path](const Base* setting) {
-        return setting->Section() == section && setting->Path() == path;
+    const auto it = std::find_if(AllSettings().begin(), AllSettings().end(), [section, &path](const Base* pref) {
+        return pref->Section() == section && pref->Path() == path;
     });
     return it != AllSettings().end() ? *it : nullptr;
 }
 
 Base* FindByCVar(const std::string& cvar) {
-    const auto it = std::find_if(AllSettings().begin(), AllSettings().end(), [&cvar](const Base* setting) {
-        return setting->CVar() != nullptr && cvar == setting->CVar();
+    const auto it = std::find_if(AllSettings().begin(), AllSettings().end(), [&cvar](const Base* pref) {
+        return pref->CVar() != nullptr && cvar == pref->CVar();
     });
     return it != AllSettings().end() ? *it : nullptr;
 }

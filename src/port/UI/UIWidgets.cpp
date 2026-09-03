@@ -361,10 +361,10 @@ bool Checkbox(const char* _label, bool* value, const CheckboxOptions& options) {
 
 bool SettingCheckbox(const char* label, const CheckboxOptions& options) {
     bool dirty = false;
-    Prefs::Bool* setting = options.GetSetting();
-    bool value = setting->Get();
+    Prefs::Bool* pref = options.GetSetting();
+    bool value = pref->Get();
     if (Checkbox(label, &value, options)) {
-        *setting = value;
+        *pref = value;
         dirty = true;
     }
     return dirty;
@@ -383,10 +383,10 @@ bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions
 
 bool PrefCheckbox(const char* label, const CheckboxOptions& options) {
     bool dirty = false;
-    Prefs::Bool* setting = options.GetSetting();
-    bool value = setting;
+    Prefs::Bool* pref = options.GetSetting();
+    bool value = pref;
     if (Checkbox(label, &value, options)) {
-        *setting = value;
+        *pref = value;
         dirty = true;
     }
     return dirty;
@@ -523,7 +523,8 @@ void PopStyleSlider() {
 
 bool SliderInt(const char* label, int32_t* value, const IntSliderOptions& options) {
     bool dirty = false;
-    Prefs::Int32* setting = options.GetSetting();
+    Prefs::Int32* pref = options.GetSetting();
+    assert(pref->GetOpts().min.has_value() && pref->GetOpts().max.has_value());
     std::string invisibleLabelStr = "##" + std::string(label);
     const char* invisibleLabel = invisibleLabelStr.c_str();
     ImGui::PushID(label);
@@ -551,7 +552,7 @@ bool SliderInt(const char* label, int32_t* value, const IntSliderOptions& option
         }
     }
     if (options.showButtons) {
-        if (Button("-", ButtonOptions{ .color = options.color }.Size(Sizes::Inline)) && *value > setting->GetOpts().min) {
+        if (Button("-", ButtonOptions{ .color = options.color }.Size(Sizes::Inline)) && *value > pref->GetOpts().min) {
             *value -= options.step;
             dirty = true;
         }
@@ -560,14 +561,14 @@ bool SliderInt(const char* label, int32_t* value, const IntSliderOptions& option
     } else {
         ImGui::SetNextItemWidth(width);
     }
-    if (ImGui::SliderScalar(invisibleLabel, ImGuiDataType_S32, value, &setting->GetOpts().min, &setting->GetOpts().max, options.format,
+    if (ImGui::SliderScalar(invisibleLabel, ImGuiDataType_S32, value, &pref->GetOpts().min.value(), &pref->GetOpts().max.value(), options.format,
                             options.flags)) {
         dirty = true;
     }
     if (options.showButtons) {
         ImGui::SameLine(0, 3.0f);
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (Button("+", ButtonOptions{ .color = options.color }.Size(Sizes::Inline)) && *value < setting->GetOpts().max) {
+        if (Button("+", ButtonOptions{ .color = options.color }.Size(Sizes::Inline)) && *value < pref->GetOpts().max) {
             *value += options.step;
             dirty = true;
         }
@@ -604,10 +605,10 @@ bool SliderInt(const char* label, int32_t* value, const IntSliderOptions& option
 
 bool PrefSliderInt(const char* label, const IntSliderOptions& options) {
     bool dirty = false;
-    Prefs::Int32* setting = options.GetSetting();
-    int32_t value = setting->Get();
+    Prefs::Int32* pref = options.GetSetting();
+    int32_t value = pref->Get();
     if (SliderInt(label, &value, options)) {
-        *setting = value;
+        *pref = value;
         dirty = true;
     }
     return dirty;
@@ -741,10 +742,10 @@ bool SliderFloat(const char* label, float* value, const FloatSliderOptions& opti
 
 bool PrefSliderFloat(const char* label, const FloatSliderOptions& options) {
     bool dirty = false;
-    Prefs::Float* setting = options.GetSetting();
-    float value = setting->Get();
+    Prefs::Float* pref = options.GetSetting();
+    float value = pref->Get();
     if (SliderFloat(label, &value, options)) {
-        *setting = value;
+        *pref = value;
         dirty = true;
     }
     return dirty;
@@ -954,6 +955,87 @@ bool CVarColorPicker(const char* label, const char* cvarName, Color_RGBA8 defaul
     }
 
     return changed;
+}
+
+bool PrefColorPicker(const char* label, const ColorPickerOptions& options) {
+    Prefs::Color* pref = options.GetSetting();
+    Color_RGBA8 color = pref->Value();
+    ImVec4 colorVec = VecFromRGBA8(color);
+    const bool locked = pref->Locked();
+    bool dirty = false;
+    bool changed = false;
+
+    // Scope the modifier widgets to this pref so two pickers sharing a label stay distinct.
+    ImGui::PushID(pref->FullPath().c_str());
+    ImGui::BeginDisabled(options.disabled);
+    ImGui::BeginDisabled(locked);
+    PushStyleCombobox(UIWidgets::Colors::DarkGray);
+    if (options.useAlpha) {
+        changed = ImGui::ColorEdit4(label, (float*)&colorVec,
+                                    ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar |
+                                        ImGuiColorEditFlags_AlphaPreview);
+    } else {
+        changed = ImGui::ColorEdit3(label, (float*)&colorVec,
+                                    ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoAlpha);
+    }
+    PopStyleCombobox();
+    WidgetTooltip(options.tooltip, options.disabled, options.disabledTooltip);
+    ImGui::AlignTextToFramePadding();
+    if (options.showReset) {
+        ImGui::SameLine();
+        if (Button("Reset", ButtonOptions({ { .tooltip = "Resets this color to its default value" } })
+                                .Color(options.color)
+                                .Size(Sizes::Inline))) {
+            pref->Reset();
+            dirty = true;
+        }
+    }
+    if (options.showRandom) {
+        ImGui::SameLine();
+        if (Button("Random", ButtonOptions({ { .tooltip = "Generates a random color value to use" } })
+                                 .Color(options.color)
+                                 .Size(Sizes::Inline))) {
+            pref->Randomize();
+            dirty = true;
+        }
+    }
+    if (options.showRainbow) {
+        ImGui::SameLine();
+        bool rainbow = pref->Rainbow();
+        if (Checkbox("Rainbow", &rainbow,
+                     CheckboxOptions(
+                         { { .tooltip = "Cycles through colors on a timer\nOverwrites previously chosen color" } })
+                         .Color(options.color))) {
+            pref->SetRainbow(rainbow);
+            dirty = true;
+        }
+    }
+    ImGui::EndDisabled();
+    if (options.showLock) {
+        ImGui::SameLine();
+        bool lock = locked;
+        if (Checkbox("Lock", &lock,
+                     CheckboxOptions({ { .tooltip = "Prevents this color from being changed" } })
+                         .Color(options.color))) {
+            pref->SetLocked(lock);
+            dirty = true;
+        }
+    }
+    ImGui::EndDisabled();
+    ImGui::PopID();
+
+    if (changed) {
+        color.r = (uint8_t)(colorVec.x * 255.0f);
+        color.g = (uint8_t)(colorVec.y * 255.0f);
+        color.b = (uint8_t)(colorVec.z * 255.0f);
+        if (options.useAlpha) {
+            color.a = (uint8_t)(colorVec.w * 255.0f);
+        }
+        pref->SetValue(color);
+        dirty = true;
+    }
+
+    return dirty;
 }
 
 bool RadioButton(const char* label, bool active, const RadioButtonsOptions& options) {

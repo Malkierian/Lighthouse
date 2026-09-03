@@ -26,6 +26,22 @@ inline void from_json(const nlohmann::json& j, Color_RGBA8& c) {
 
 namespace Prefs {
 
+inline void to_json(nlohmann::json& j, const ColorValue& c) {
+    j = nlohmann::json{ { "value", c.value }, { "rainbow", c.rainbow }, { "locked", c.locked } };
+}
+
+inline void from_json(const nlohmann::json& j, ColorValue& c) {
+    // A bare {r,g,b,a} object reads as a plain color with no picker state, so a color written
+    // before it grew a picker still loads.
+    if (j.contains("r")) {
+        c.value = j.get<Color_RGBA8>();
+        return;
+    }
+    c.value = j.at("value").get<Color_RGBA8>();
+    c.rainbow = j.value("rainbow", false);
+    c.locked = j.value("locked", false);
+}
+
 template <typename V> bool Scalar<V>::Validate(V& value) const {
     if constexpr (std::is_arithmetic_v<V>) {
         if (mOptions.min.has_value() && value < *mOptions.min) {

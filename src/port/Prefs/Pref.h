@@ -22,6 +22,13 @@
 namespace Prefs {
 
     const char* SectionBlock(PrefSection section);
+
+    struct ColorValue {
+        Color_RGBA8 value{ 255, 255, 255, 255 };
+        bool rainbow = false;
+        bool locked = false;
+    };
+
     // Color_RGBA8 has no operator==, and adding one at global scope would collide with the
     // comparisons Menu.cpp defines in namespace Ship. Compare through this instead.
     // Will be consolidated as this process moves forward.
@@ -30,6 +37,9 @@ namespace Prefs {
     }
     template <> inline bool ValueEquals<Color_RGBA8>(const Color_RGBA8& a, const Color_RGBA8& b) {
         return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+    }
+    template <> inline bool ValueEquals<ColorValue>(const ColorValue& a, const ColorValue& b) {
+        return ValueEquals(a.value, b.value);
     }
 
     template <typename V>
@@ -194,7 +204,31 @@ namespace Prefs {
     using Int32 = Scalar<int32_t>;
     using Float = Scalar<float>;
     using String = Scalar<std::string>;
-    using Color = Scalar<Color_RGBA8>;
+
+    class Color : public Scalar<ColorValue> {
+    public:
+        Color(PrefSection section, std::string path, Color_RGBA8 def, Options<ColorValue> options = {})
+            : Scalar<ColorValue>(section, std::move(path), ColorValue{ def }, std::move(options)) {
+        }
+
+        const Color_RGBA8& Value() const {
+            return mValue.value;
+        }
+        bool Rainbow() const {
+            return mValue.rainbow;
+        }
+        bool Locked() const {
+            return mValue.locked;
+        }
+        const Color_RGBA8& DefaultValue() const {
+            return mDefault.value;
+        }
+
+        void SetValue(Color_RGBA8 value);
+        void SetRainbow(bool rainbow);
+        void SetLocked(bool locked);
+        void Randomize();
+    };
 
     // Never instantiate Vector<bool>: std::vector<bool> is the proxy-reference specialisation and the
     // const V& accessors above do not behave. Use Vector<uint8_t> for a flag array.
@@ -207,6 +241,7 @@ namespace Prefs {
     extern template class Scalar<float>;
     extern template class Scalar<std::string>;
     extern template class Scalar<Color_RGBA8>;
+    extern template class Scalar<ColorValue>;
     extern template class Scalar<std::vector<int32_t>>;
     extern template class Scalar<std::vector<float>>;
     extern template class Scalar<std::vector<std::string>>;

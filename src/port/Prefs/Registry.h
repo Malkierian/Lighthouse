@@ -21,8 +21,8 @@ bool IsDirty();
 Base* Find(PrefSection section, const std::string& path);
 Base* FindByCVar(const std::string& cvar);
 
-void StoreNode(const Base& setting);
-void EraseNode(const Base& setting);
+void StoreNode(const Base& pref);
+void EraseNode(const Base& pref);
 nlohmann::json& Document();
 
 } // namespace Prefs

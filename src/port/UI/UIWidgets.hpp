@@ -110,7 +110,7 @@ struct WidgetOptions {
     const char* tooltip = "";
     bool disabled = false;
     const char* disabledTooltip = "";
-    Prefs::Base* setting = nullptr;
+    Prefs::Base* pref = nullptr;
 
     WidgetOptions& Tooltip(const char* tooltip_) {
         tooltip = tooltip_;
@@ -168,7 +168,7 @@ struct ColorPickerOptions : WidgetOptions {
     ImVec2 padding = ImVec2(10.0f, 8.0f);
     Colors color = Colors::Gray;
     Color_RGBA8 defaultValue = { 255, 255, 255, 255 };
-    bool useAlpha, showReset, showRandom, showRainbow, showLock;
+    bool useAlpha = false, showReset = false, showRandom = false, showRainbow = false, showLock = false;
 
     ColorPickerOptions& Size(ImVec2 size_) {
         size = size_;
@@ -218,6 +218,16 @@ struct ColorPickerOptions : WidgetOptions {
     ColorPickerOptions& DefaultValue(Color_RGBA8 defaultValue_) {
         defaultValue = defaultValue_;
         return *this;
+    }
+
+    // Only applicable to PrefColorPicker; the pref carries its own default, rainbow and lock.
+    ColorPickerOptions& Setting(Prefs::Color* pref_) {
+        pref = pref_;
+        return *this;
+    }
+
+    Prefs::Color* GetSetting() const {
+        return static_cast<Prefs::Color*>(pref);
     }
 };
 
@@ -302,12 +312,12 @@ struct CheckboxOptions : WidgetOptions {
     }
 
     CheckboxOptions& Setting(Prefs::Bool* settingObj) {
-        setting = settingObj;
+        pref = settingObj;
         return *this;
     }
 
     Prefs::Bool* GetSetting() const {
-        return static_cast<Prefs::Bool*>(setting);
+        return static_cast<Prefs::Bool*>(pref);
     }
 };
 
@@ -400,13 +410,13 @@ struct IntSliderOptions : WidgetOptions {
         return *this;
     }
     
-    IntSliderOptions& Setting(Prefs::Int32* setting_) {
-        setting = setting_;
+    IntSliderOptions& Setting(Prefs::Int32* pref_) {
+        pref = pref_;
         return *this;
     }
 
     Prefs::Int32* GetSetting() const {
-        return static_cast<Prefs::Int32*>(setting);
+        return static_cast<Prefs::Int32*>(pref);
     }
 };
 
@@ -467,13 +477,13 @@ struct FloatSliderOptions : WidgetOptions {
         return *this;
     }
 
-    FloatSliderOptions& Setting(Prefs::Float* setting_) {
-        setting = setting_;
+    FloatSliderOptions& Setting(Prefs::Float* pref_) {
+        pref = pref_;
         return *this;
     }
 
     Prefs::Float* GetSetting() const {
-        return static_cast<Prefs::Float*>(setting);
+        return static_cast<Prefs::Float*>(pref);
     }
 };
 
@@ -503,7 +513,7 @@ struct RadioButtonsOptions : WidgetOptions {
     }
 
     Prefs::Int32* GetSetting() const {
-        return static_cast<Prefs::Int32*>(setting);
+        return static_cast<Prefs::Int32*>(pref);
     }
 };
 
@@ -581,7 +591,7 @@ struct InputOptions : WidgetOptions {
     }
 
     Prefs::String* GetSetting() const {
-        return static_cast<Prefs::String*>(setting);
+        return static_cast<Prefs::String*>(pref);
     }
 };
 
@@ -809,6 +819,7 @@ bool InputInt(const char* label, int32_t* value, const InputOptions& options = {
 bool CVarInputInt(const char* label, const char* cvarName, const InputOptions& options = {});
 bool CVarColorPicker(const char* label, const char* cvarName, Color_RGBA8 defaultColor, bool hasAlpha = false,
                      uint8_t modifiers = 0, UIWidgets::Colors themeColor = UIWidgets::Colors::LightBlue);
+bool PrefColorPicker(const char* label, const ColorPickerOptions& options);
 bool RadioButton(const char* label, bool active);
 bool CVarRadioButton(const char* text, const char* cvarName, int32_t id, const RadioButtonsOptions& options);
 bool StateButton(const char* str_id, const char* label, ImVec2 size, UIWidgets::ButtonOptions options,
