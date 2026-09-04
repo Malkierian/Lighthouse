@@ -13,6 +13,16 @@ namespace {
 constexpr const char* kSectionBlocks[SECTION_COUNT] = {
     "settings", "enhancements", "rando", "trackers", "network", // "cosmetics", "audio",
 };
+
+Options<int32_t> WithKeyAllowList(const std::map<int32_t, EnumEntry>& entries, Options<int32_t> options) {
+    if (options.oneOf.empty()) {
+        options.oneOf.reserve(entries.size());
+        for (const auto& [key, entry] : entries) {
+            options.oneOf.push_back(key);
+        }
+    }
+    return options;
+}
 } // namespace
 
 const char* SectionBlock(PrefSection section) {
@@ -93,6 +103,49 @@ void Color::Randomize() {
     next.value.b = static_cast<uint8_t>(dist(rng));
     next.rainbow = false; // A picked color and a cycling one are mutually exclusive.
     Set(next);
+}
+
+Enum::Enum(PrefSection section, std::string path, int32_t def, std::map<int32_t, EnumEntry> entries,
+           Options<int32_t> options)
+    : Scalar<int32_t>(section, std::move(path), def, WithKeyAllowList(entries, std::move(options))),
+      mEntries(std::move(entries)) {
+}
+
+void Enum::Write(nlohmann::json& out) const {
+    const auto it = mEntries.find(mValue);
+    if (it != mEntries.end()) {
+        out = it->second.wireName;
+        return;
+    }
+    if (!mPendingWireName.empty()) {
+        out = mPendingWireName;
+        return;
+    }
+    out = mValue;
+}
+
+bool Enum::Read(const nlohmann::json& in) {
+    if (in.is_string()) {
+        const std::string name = in.get<std::string>();
+        for (const auto& [key, entry] : mEntries) {
+            if (name == entry.wireName) {
+                mValue = key;
+                mPendingWireName.clear();
+                return true;
+            }
+        }
+        mPendingWireName = name;
+        SPDLOG_WARN("Setting '{}' has no entry named '{}'; using the default and keeping the stored name", mPath, name);
+        return false;
+    }
+
+    if (in.is_number_integer()) {
+        mPendingWireName.clear();
+        return Scalar<int32_t>::Read(in);
+    }
+
+    SPDLOG_WARN("Setting '{}' is neither an entry name nor a key in the config; using the default", mPath);
+    return false;
 }
 
 // Emitted here so Setting.h can stay on <nlohmann/json_fwd.hpp>. A module needing some other

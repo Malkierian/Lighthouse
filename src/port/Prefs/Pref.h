@@ -232,6 +232,33 @@ public:
     void Randomize();
 };
 
+struct EnumEntry {
+    const char* wireName;     // persisted in JSON; stable, never localised
+    const char* displayLabel; // shown in the UI; safe to reword or localise
+};
+
+// An int32 in memory, an entry name on disk.
+class Enum : public Scalar<int32_t> {
+public:
+    Enum(PrefSection section, std::string path, int32_t def, std::map<int32_t, EnumEntry> entries,
+         Options<int32_t> options = {});
+
+    const std::map<int32_t, EnumEntry>& Entries() const {
+        return mEntries;
+    }
+
+    const std::string& PendingWireName() const {
+        return mPendingWireName;
+    }
+
+    void Write(nlohmann::json& out) const override;
+    bool Read(const nlohmann::json& in) override;
+
+protected:
+    std::map<int32_t, EnumEntry> mEntries;
+    std::string mPendingWireName;
+};
+
 // Never instantiate Vector<bool>: std::vector<bool> is the proxy-reference specialisation and the
 // const V& accessors above do not behave. Use Vector<uint8_t> for a flag array.
 template <typename T> using Vector = Scalar<std::vector<T>>;

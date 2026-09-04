@@ -358,6 +358,15 @@ struct ComboboxOptions : WidgetOptions {
         color = color_;
         return *this;
     }
+
+    ComboboxOptions& Setting(Prefs::Enum* pref_) {
+        pref = pref_;
+        return *this;
+    }
+
+    Prefs::Enum* GetSetting() const {
+        return static_cast<Prefs::Enum*>(pref);
+    }
 };
 
 struct IntSliderOptions : WidgetOptions {
@@ -672,6 +681,7 @@ void RenderText(ImVec2 pos, const char* text, const char* text_end, bool hide_te
 bool Checkbox(const char* label, bool* v, const CheckboxOptions& options = {});
 bool CVarCheckbox(const char* label, const char* cvarName, const CheckboxOptions& options = {});
 bool PrefCheckbox(const char* label, const CheckboxOptions& options = {});
+bool PrefCombobox(const char* label, const ComboboxOptions& options = {});
 bool SettingCheckbox(const char* label, const CheckboxOptions& options);
 
 void PushStyleCombobox(const ImVec4& color);
@@ -749,7 +759,7 @@ bool ComboboxImpl(const char* label, T* value, const ComboboxOptions& options, c
     if (ImGui::BeginCombo(invisibleLabel, previewLabel, options.flags)) {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 10.0f));
         forEach([&](T entryValue, const char* entryLabel) {
-            if (strlen(entryLabel) > 1 && ImGui::Selectable(entryLabel, entryValue == *value)) {
+            if (entryLabel[0] != '\0' && ImGui::Selectable(entryLabel, entryValue == *value)) {
                 *value = entryValue;
                 dirty = true;
             }

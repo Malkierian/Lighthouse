@@ -392,6 +392,23 @@ bool PrefCheckbox(const char* label, const CheckboxOptions& options) {
     return dirty;
 }
 
+bool PrefCombobox(const char* label, const ComboboxOptions& options) {
+    bool dirty = false;
+    Prefs::Enum* pref = options.GetSetting();
+    int32_t value = pref->Get();
+    const auto& entries = pref->Entries();
+    // Set() rather than operator=: Enum's implicit copy-assignment hides Scalar's operator=(V).
+    if (detail::ComboboxImpl<int32_t>(label, &value, options, [&](auto&& visit) {
+            for (const auto& [key, entry] : entries) {
+                visit(key, entry.displayLabel);
+            }
+        })) {
+        pref->Set(value);
+        dirty = true;
+    }
+    return dirty;
+}
+
 bool StateButton(const char* str_id, const char* label, ImVec2 size, ButtonOptions options, ImGuiButtonFlags flags) {
 
     ImGuiContext& g = *GImGui;
