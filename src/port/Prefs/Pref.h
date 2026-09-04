@@ -21,232 +21,234 @@
 
 namespace Prefs {
 
-    const char* SectionBlock(PrefSection section);
+const char* SectionBlock(PrefSection section);
 
-    struct ColorValue {
-        Color_RGBA8 value{ 255, 255, 255, 255 };
-        bool rainbow = false;
-        bool locked = false;
-    };
+struct ColorValue {
+    Color_RGBA8 value{ 255, 255, 255, 255 };
+    bool rainbow = false;
+    bool locked = false;
+};
 
-    // Color_RGBA8 has no operator==, and adding one at global scope would collide with the
-    // comparisons Menu.cpp defines in namespace Ship. Compare through this instead.
-    // Will be consolidated as this process moves forward.
-    template <typename V> inline bool ValueEquals(const V& a, const V& b) {
-        return a == b;
+// Color_RGBA8 has no operator==, and adding one at global scope would collide with the
+// comparisons Menu.cpp defines in namespace Ship. Compare through this instead.
+// Will be consolidated as this process moves forward.
+template <typename V> inline bool ValueEquals(const V& a, const V& b) {
+    return a == b;
+}
+template <> inline bool ValueEquals<Color_RGBA8>(const Color_RGBA8& a, const Color_RGBA8& b) {
+    return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+}
+template <> inline bool ValueEquals<ColorValue>(const ColorValue& a, const ColorValue& b) {
+    return ValueEquals(a.value, b.value);
+}
+
+template <typename V>
+concept HasSize = requires(const V& v) {
+    v.size();
+};
+
+template <typename V> struct Options {
+    const char* cvar = nullptr; // optional legacy name for console/remote lookup
+    std::optional<V> min, max;  // arithmetic types only
+    bool clamp = true;          // min/max and maxSize violations: clamp when true, reject when false
+    size_t maxSize = 0;         // strings and containers; 0 = unlimited
+
+    /// Allow-list: the value must equal one of these entries. Empty means unrestricted.
+    std::vector<V> oneOf;
+
+    std::function<bool(V&)> validator; ///< may adjust in place; false rejects
+
+    Options& CVar(const char* cvar_) {
+        cvar = cvar_;
+        return *this;
     }
-    template <> inline bool ValueEquals<Color_RGBA8>(const Color_RGBA8& a, const Color_RGBA8& b) {
-        return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+    Options& Min(V min_) {
+        min = std::move(min_);
+        return *this;
     }
-    template <> inline bool ValueEquals<ColorValue>(const ColorValue& a, const ColorValue& b) {
-        return ValueEquals(a.value, b.value);
+    Options& Max(V max_) {
+        max = std::move(max_);
+        return *this;
+    }
+    Options& Clamp(bool clamp_) {
+        clamp = clamp_;
+        return *this;
+    }
+    Options& MaxSize(size_t maxSize_) {
+        maxSize = maxSize_;
+        return *this;
+    }
+    Options& OneOf(std::vector<V> oneOf_) {
+        oneOf = std::move(oneOf_);
+        return *this;
+    }
+    Options& Validator(std::function<bool(V&)> validator_) {
+        validator = std::move(validator_);
+        return *this;
+    }
+};
+
+class Base {
+public:
+    Base(PrefSection section, std::string path, const char* cvar);
+    virtual ~Base();
+
+    Base(const Base&) = delete;
+    Base& operator=(const Base&) = delete;
+
+    PrefSection Section() const {
+        return mSection;
+    }
+    // Dot-separated key within the section's root block.
+    const std::string& Path() const {
+        return mPath;
+    }
+    const std::string& FullPath() const {
+        return mFullPath;
+    }
+    const char* CVar() const {
+        return mCvar;
+    }
+    bool IsExplicitlySet() const {
+        return mSet;
     }
 
-    template <typename V>
-    concept HasSize = requires(const V& v) {
-        v.size();
-    };
+    virtual bool IsDefault() const = 0;
+    virtual void Reset() = 0;
+    virtual void Write(nlohmann::json& out) const = 0;
+    // Validates and applies. Returns false if the node was rejected, in which case the caller
+    // leaves it in the document untouched rather than destroying it.
+    virtual bool Read(const nlohmann::json& in) = 0;
 
-    template <typename V> struct Options {
-        const char* cvar = nullptr; // optional legacy name for console/remote lookup
-        std::optional<V> min, max;  // arithmetic types only
-        bool clamp = true;          // min/max and maxSize violations: clamp when true, reject when false
-        size_t maxSize = 0;         // strings and containers; 0 = unlimited
+    void SetOnChange(std::function<void(Base&)> callback) {
+        mOnChange = std::move(callback);
+    }
 
-        /// Allow-list: the value must equal one of these entries. Empty means unrestricted.
-        std::vector<V> oneOf;
-
-        std::function<bool(V&)> validator; ///< may adjust in place; false rejects
-
-        Options& CVar(const char* cvar_) {
-            cvar = cvar_;
-            return *this;
-        }
-        Options& Min(V min_) {
-            min = std::move(min_);
-            return *this;
-        }
-        Options& Max(V max_) {
-            max = std::move(max_);
-            return *this;
-        }
-        Options& Clamp(bool clamp_) {
-            clamp = clamp_;
-            return *this;
-        }
-        Options& MaxSize(size_t maxSize_) {
-            maxSize = maxSize_;
-            return *this;
-        }
-        Options& OneOf(std::vector<V> oneOf_) {
-            oneOf = std::move(oneOf_);
-            return *this;
-        }
-        Options& Validator(std::function<bool(V&)> validator_) {
-            validator = std::move(validator_);
-            return *this;
-        }
-    };
-
-    class Base {
-    public:
-        Base(PrefSection section, std::string path, const char* cvar);
-        virtual ~Base();
-
-        Base(const Base&) = delete;
-        Base& operator=(const Base&) = delete;
-
-        PrefSection Section() const {
-            return mSection;
-        }
-        // Dot-separated key within the section's root block.
-        const std::string& Path() const {
-            return mPath;
-        }
-        const std::string& FullPath() const {
-            return mFullPath;
-        }
-        const char* CVar() const {
-            return mCvar;
-        }
-        bool IsExplicitlySet() const {
-            return mSet;
-        }
-
-        virtual bool IsDefault() const = 0;
-        virtual void Reset() = 0;
-        virtual void Write(nlohmann::json& out) const = 0;
-        // Validates and applies. Returns false if the node was rejected, in which case the caller
-        // leaves it in the document untouched rather than destroying it.
-        virtual bool Read(const nlohmann::json& in) = 0;
-
-        void SetOnChange(std::function<void(Base&)> callback) {
-            mOnChange = std::move(callback);
-        }
-
-        void ApplyLoaded(const nlohmann::json& in) {
-            if (Read(in)) {
-                mSet = true;
-            }
-        }
-
-    protected:
-        void MarkChanged(bool valueChanged);
-        void MarkReset(bool valueChanged);
-
-        PrefSection mSection;
-        std::string mPath;
-        std::string mFullPath;
-        const char* mCvar;
-        bool mSet = false;
-        std::function<void(Base&)> mOnChange;
-    };
-
-    // One template covers every stored type. Containers work because nlohmann already serialises
-    // std::vector<T> as an array and std::map<std::string, V> as an object.
-    template <typename V> class Scalar : public Base {
-    public:
-        Scalar(PrefSection section, std::string path, V def, Options<V> options = {})
-            : Base(section, std::move(path), options.cvar), mValue(def), mDefault(std::move(def)),
-            mOptions(std::move(options)) {
-        }
-
-        const V& Get() const {
-            return mValue;
-        }
-        operator const V&() const {
-            return mValue;
-        }
-        const V& Default() const {
-            return mDefault;
-        }
-
-        void Set(V value) {
-            if (!Validate(value)) {
-                return;
-            }
-            const bool changed = !ValueEquals(mValue, value);
-            mValue = std::move(value);
+    void ApplyLoaded(const nlohmann::json& in) {
+        if (Read(in)) {
             mSet = true;
-            MarkChanged(changed);
         }
+    }
 
-        Scalar& operator=(V value) {
-            Set(std::move(value));
-            return *this;
+protected:
+    void MarkChanged(bool valueChanged);
+    void MarkReset(bool valueChanged);
+
+    PrefSection mSection;
+    std::string mPath;
+    std::string mFullPath;
+    const char* mCvar;
+    bool mSet = false;
+    std::function<void(Base&)> mOnChange;
+};
+
+// One template covers every stored type. Containers work because nlohmann already serialises
+// std::vector<T> as an array and std::map<std::string, V> as an object.
+template <typename V> class Scalar : public Base {
+public:
+    Scalar(PrefSection section, std::string path, V def, Options<V> options = {})
+        : Base(section, std::move(path), options.cvar), mValue(def), mDefault(std::move(def)),
+          mOptions(std::move(options)) {
+    }
+
+    const V& Get() const {
+        return mValue;
+    }
+    operator const V&() const {
+        return mValue;
+    }
+    const V& Default() const {
+        return mDefault;
+    }
+
+    void Set(V value) {
+        if (!Validate(value)) {
+            return;
         }
+        const bool changed = !ValueEquals(mValue, value);
+        mValue = std::move(value);
+        mSet = true;
+        MarkChanged(changed);
+    }
 
-        bool IsDefault() const override {
-            return ValueEquals(mValue, mDefault);
-        }
+    Scalar& operator=(V value) {
+        Set(std::move(value));
+        return *this;
+    }
 
-        void Reset() override {
-            const bool changed = !ValueEquals(mValue, mDefault);
-            mValue = mDefault;
-            mSet = false;
-            MarkReset(changed);
-        }
+    bool IsDefault() const override {
+        return ValueEquals(mValue, mDefault);
+    }
 
-        void Write(nlohmann::json& out) const override;
-        bool Read(const nlohmann::json& in) override;
+    void Reset() override {
+        const bool changed = !ValueEquals(mValue, mDefault);
+        mValue = mDefault;
+        mSet = false;
+        MarkReset(changed);
+    }
 
-        bool Validate(V& value) const;
+    void Write(nlohmann::json& out) const override;
+    bool Read(const nlohmann::json& in) override;
 
-        Options<V> GetOpts() { return mOptions; }
+    bool Validate(V& value) const;
 
-    protected:
-        V mValue;
-        V mDefault;
-        Options<V> mOptions;
-    };
+    Options<V> GetOpts() {
+        return mOptions;
+    }
 
-    using Bool = Scalar<bool>;
-    using Int32 = Scalar<int32_t>;
-    using Float = Scalar<float>;
-    using String = Scalar<std::string>;
+protected:
+    V mValue;
+    V mDefault;
+    Options<V> mOptions;
+};
 
-    class Color : public Scalar<ColorValue> {
-    public:
-        Color(PrefSection section, std::string path, Color_RGBA8 def, Options<ColorValue> options = {})
-            : Scalar<ColorValue>(section, std::move(path), ColorValue{ def }, std::move(options)) {
-        }
+using Bool = Scalar<bool>;
+using Int32 = Scalar<int32_t>;
+using Float = Scalar<float>;
+using String = Scalar<std::string>;
 
-        const Color_RGBA8& Value() const {
-            return mValue.value;
-        }
-        bool Rainbow() const {
-            return mValue.rainbow;
-        }
-        bool Locked() const {
-            return mValue.locked;
-        }
-        const Color_RGBA8& DefaultValue() const {
-            return mDefault.value;
-        }
+class Color : public Scalar<ColorValue> {
+public:
+    Color(PrefSection section, std::string path, Color_RGBA8 def, Options<ColorValue> options = {})
+        : Scalar<ColorValue>(section, std::move(path), ColorValue{ def }, std::move(options)) {
+    }
 
-        void SetValue(Color_RGBA8 value);
-        void SetRainbow(bool rainbow);
-        void SetLocked(bool locked);
-        void Randomize();
-    };
+    const Color_RGBA8& Value() const {
+        return mValue.value;
+    }
+    bool Rainbow() const {
+        return mValue.rainbow;
+    }
+    bool Locked() const {
+        return mValue.locked;
+    }
+    const Color_RGBA8& DefaultValue() const {
+        return mDefault.value;
+    }
 
-    // Never instantiate Vector<bool>: std::vector<bool> is the proxy-reference specialisation and the
-    // const V& accessors above do not behave. Use Vector<uint8_t> for a flag array.
-    template <typename T> using Vector = Scalar<std::vector<T>>;
-    template <typename K, typename V> using Map = Scalar<std::map<K, V>>;
+    void SetValue(Color_RGBA8 value);
+    void SetRainbow(bool rainbow);
+    void SetLocked(bool locked);
+    void Randomize();
+};
 
-    // Common instantiations live in Pref.cpp so this header never needs the full JSON parser.
-    extern template class Scalar<bool>;
-    extern template class Scalar<int32_t>;
-    extern template class Scalar<float>;
-    extern template class Scalar<std::string>;
-    extern template class Scalar<Color_RGBA8>;
-    extern template class Scalar<ColorValue>;
-    extern template class Scalar<std::vector<int32_t>>;
-    extern template class Scalar<std::vector<float>>;
-    extern template class Scalar<std::vector<std::string>>;
-    extern template class Scalar<std::map<std::string, int32_t>>;
-    extern template class Scalar<std::map<std::string, float>>;
-    extern template class Scalar<std::map<std::string, std::string>>;
+// Never instantiate Vector<bool>: std::vector<bool> is the proxy-reference specialisation and the
+// const V& accessors above do not behave. Use Vector<uint8_t> for a flag array.
+template <typename T> using Vector = Scalar<std::vector<T>>;
+template <typename K, typename V> using Map = Scalar<std::map<K, V>>;
+
+// Common instantiations live in Pref.cpp so this header never needs the full JSON parser.
+extern template class Scalar<bool>;
+extern template class Scalar<int32_t>;
+extern template class Scalar<float>;
+extern template class Scalar<std::string>;
+extern template class Scalar<Color_RGBA8>;
+extern template class Scalar<ColorValue>;
+extern template class Scalar<std::vector<int32_t>>;
+extern template class Scalar<std::vector<float>>;
+extern template class Scalar<std::vector<std::string>>;
+extern template class Scalar<std::map<std::string, int32_t>>;
+extern template class Scalar<std::map<std::string, float>>;
+extern template class Scalar<std::map<std::string, std::string>>;
 
 } // namespace Prefs

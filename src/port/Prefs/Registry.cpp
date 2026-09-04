@@ -166,9 +166,8 @@ Base* Find(PrefSection section, const std::string& path) {
 }
 
 Base* FindByCVar(const std::string& cvar) {
-    const auto it = std::find_if(AllSettings().begin(), AllSettings().end(), [&cvar](const Base* pref) {
-        return pref->CVar() != nullptr && cvar == pref->CVar();
-    });
+    const auto it = std::find_if(AllSettings().begin(), AllSettings().end(),
+                                 [&cvar](const Base* pref) { return pref->CVar() != nullptr && cvar == pref->CVar(); });
     return it != AllSettings().end() ? *it : nullptr;
 }
 

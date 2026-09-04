@@ -364,6 +364,11 @@ struct IntSliderOptions : WidgetOptions {
     bool showButtons = true;
     const char* format = "%d";
     int32_t step = 1;
+    // min/max/defaultValue/clamp are only used by SliderInt/CVarSliderInt; PrefSliderInt takes them from the pref.
+    int32_t min = 1;
+    int32_t max = 10;
+    int32_t defaultValue = 1;
+    bool clamp = true;
     ComponentAlignments alignment = ComponentAlignments::Left;
     LabelPositions labelPosition = LabelPositions::Above;
     Colors color = Colors::Gray;
@@ -382,6 +387,26 @@ struct IntSliderOptions : WidgetOptions {
 
     IntSliderOptions& Step(int32_t step_) {
         step = step_;
+        return *this;
+    }
+
+    IntSliderOptions& Min(int32_t min_) {
+        min = min_;
+        return *this;
+    }
+
+    IntSliderOptions& Max(int32_t max_) {
+        max = max_;
+        return *this;
+    }
+
+    IntSliderOptions& DefaultValue(int32_t defaultValue_) {
+        defaultValue = defaultValue_;
+        return *this;
+    }
+
+    IntSliderOptions& Clamp(bool clamp_) {
+        clamp = clamp_;
         return *this;
     }
 
@@ -409,7 +434,7 @@ struct IntSliderOptions : WidgetOptions {
         size = size_;
         return *this;
     }
-    
+
     IntSliderOptions& Setting(Prefs::Int32* pref_) {
         pref = pref_;
         return *this;
@@ -424,6 +449,12 @@ struct FloatSliderOptions : WidgetOptions {
     bool showButtons = true;
     const char* format = "%f";
     float step = 0.01f;
+    // min/max/defaultValue/clamp are only used by SliderFloat/CVarSliderFloat; PrefSliderFloat takes them from the
+    // pref.
+    float min = 0.01f;
+    float max = 10.0f;
+    float defaultValue = 1.0f;
+    bool clamp = true;
     bool isPercentage = false; // Multiplies visual value by 100
     ComponentAlignments alignment = ComponentAlignments::Left;
     LabelPositions labelPosition = LabelPositions::Above;
@@ -446,6 +477,26 @@ struct FloatSliderOptions : WidgetOptions {
         return *this;
     }
 
+    FloatSliderOptions& Min(float min_) {
+        min = min_;
+        return *this;
+    }
+
+    FloatSliderOptions& Max(float max_) {
+        max = max_;
+        return *this;
+    }
+
+    FloatSliderOptions& DefaultValue(float defaultValue_) {
+        defaultValue = defaultValue_;
+        return *this;
+    }
+
+    FloatSliderOptions& Clamp(bool clamp_) {
+        clamp = clamp_;
+        return *this;
+    }
+
     FloatSliderOptions& ComponentAlignment(ComponentAlignments alignment_) {
         alignment = alignment_;
         return *this;
@@ -459,6 +510,8 @@ struct FloatSliderOptions : WidgetOptions {
     FloatSliderOptions& IsPercentage(bool isPercentage_ = true) {
         isPercentage = isPercentage_;
         format = "%.0f%%";
+        min = 0.0f;
+        max = 1.0f;
         return *this;
     }
 
@@ -810,8 +863,10 @@ bool CVarCombobox(const char* label, const char* cvarName, const char* (&comboAr
 void PushStyleSlider(Colors color = Colors::LightBlue);
 void PopStyleSlider();
 bool SliderInt(const char* label, int32_t* value, const IntSliderOptions& options = {});
+bool CVarSliderInt(const char* label, const char* cvarName, const IntSliderOptions& options = {});
 bool PrefSliderInt(const char* label, const IntSliderOptions& options = {});
 bool SliderFloat(const char* label, float* value, const FloatSliderOptions& options = {});
+bool CVarSliderFloat(const char* label, const char* cvarName, const FloatSliderOptions& options = {});
 bool PrefSliderFloat(const char* label, const FloatSliderOptions& options = {});
 bool InputString(const char* label, std::string* value, const InputOptions& options = {});
 bool CVarInputString(const char* label, const char* cvarName, const InputOptions& options = {});

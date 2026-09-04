@@ -363,11 +363,10 @@ InputViewerSettingsWindow::~InputViewerSettingsWindow() {
 
 void InputViewerSettingsWindow::DrawElement() {
     // gInputViewer.Scale
-    PrefSliderFloat("Input Viewer Scale: %.2f",
-                    FloatSliderOptions({.pref = &Prefs::Settings::InputViewer::Scale})
-                        .Color(THEME_COLOR)
-                        .ShowButtons(true)
-                        .Tooltip("Sets the on screen size of the input viewer"));
+    PrefSliderFloat("Input Viewer Scale: %.2f", FloatSliderOptions({ .pref = &Prefs::Settings::InputViewer::Scale })
+                                                    .Color(THEME_COLOR)
+                                                    .ShowButtons(true)
+                                                    .Tooltip("Sets the on screen size of the input viewer"));
 
     // gInputViewer.EnableDragging
     CVarCheckbox("Enable Dragging", CVAR_INPUT_VIEWER("EnableDragging"),
@@ -544,7 +543,7 @@ void InputViewerSettingsWindow::DrawElement() {
                     "Determines the conditions under which the analog stick outline/background texture is visible."));
         // gInputViewer.AnalogStick.Movement
         PrefSliderInt("Analog Stick Movement: %dpx",
-                      IntSliderOptions({.pref = &Prefs::Settings::InputViewer::AnalogStick::Movement})
+                      IntSliderOptions({ .pref = &Prefs::Settings::InputViewer::AnalogStick::Movement })
                           .Color(THEME_COLOR)
                           .ShowButtons(true)
                           .Tooltip("Sets the distance to move the analog stick in the input viewer. Useful for custom "
@@ -582,19 +581,20 @@ void InputViewerSettingsWindow::DrawElement() {
     }
 
     if (ImGui::CollapsingHeader("Analog Angle Values")) {
-        PrefCheckbox("Show Analog Stick Angle Values", 
-            CheckboxOptions().Color(THEME_COLOR).Tooltip("Displays analog stick angle values in the input viewer")
-                .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Enabled));
+        PrefCheckbox("Show Analog Stick Angle Values",
+                     CheckboxOptions()
+                         .Color(THEME_COLOR)
+                         .Tooltip("Displays analog stick angle values in the input viewer")
+                         .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Enabled));
         if (Prefs::Settings::InputViewer::AnalogAngles::Enabled) {
             CVarColorPicker("Text Color", CVAR_INPUT_VIEWER("AnalogAngles.TextColor"), textColorDefault, true,
                             ColorPickerRandomButton | ColorPickerResetButton);
 
-            PrefSliderFloat("Angle Text Scale: %.2f%%",
-                            FloatSliderOptions()
-                                .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Scale)
-                                .Color(THEME_COLOR)
-                                .IsPercentage()
-                                .ShowButtons(true));
+            PrefSliderFloat("Angle Text Scale: %.2f%%", FloatSliderOptions()
+                                                            .Setting(&Prefs::Settings::InputViewer::AnalogAngles::Scale)
+                                                            .Color(THEME_COLOR)
+                                                            .IsPercentage()
+                                                            .ShowButtons(true));
 
             PrefSliderInt("Angle Text Offset: %dpx",
                           IntSliderOptions()

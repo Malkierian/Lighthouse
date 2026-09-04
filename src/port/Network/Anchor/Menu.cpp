@@ -191,7 +191,7 @@ void AnchorMainMenu(WidgetInfo& info) {
                                 .Tooltip("Draw each other player's name above their character."));
 
     if (CVarGetInteger(CVAR_REMOTE_ANCHOR("Nametags"), 1)) {
-        UIWidgets::PrefSliderFloat("Nametag Distance", CVAR_REMOTE_ANCHOR("NametagScale"),
+        UIWidgets::CVarSliderFloat("Nametag Distance", CVAR_REMOTE_ANCHOR("NametagScale"),
                                    UIWidgets::FloatSliderOptions()
                                        .Min(0.5f)
                                        .Max(6.0f)

@@ -41,7 +41,7 @@
 #include "port/Enhancements/Events/PortEnhancements.h"
 #include "port/Patches/Patches.h"
 #include "port/Save/SaveManager.h"
-#include "port/Settings/Registry.h"
+#include "port/Prefs/Registry.h"
 #include "port/UI/cvar_prefixes.h"
 #include "ResourceHelpers.h"
 #include "Localization/Language.h"
