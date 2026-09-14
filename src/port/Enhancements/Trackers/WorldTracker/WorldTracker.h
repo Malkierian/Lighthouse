@@ -43,4 +43,13 @@ public:
 
 } // namespace WorldTracker
 
+// Prefs
+#include "port/Prefs/Pref.h"
+
+namespace Prefs::Trackers::WorldTracker {
+extern Prefs::Bool ShowCurrentLevel;
+extern Prefs::Bool ShowTotalCollected;
+extern Prefs::Bool SeparateTotals;
+} // namespace Prefs::Trackers::WorldTracker
+
 #endif // WORLD_TRACKER_H

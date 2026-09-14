@@ -6,15 +6,9 @@
 #include "fast/Fast3dGui.h"
 #include "functions.h"
 
+// Window visibility stays a CVar: Ship::GuiWindow owns it.
 #define CVAR_NAME_SHOW_WORLD_TRACKER "gWindows.WorldTracker"
-#define CVAR_NAME_SHOW_CURRENT_LEVEL "gRando.WorldTracker.ShowCurrentLevel"
-#define CVAR_NAME_SHOW_TOTAL_COLLECTED "gRando.WorldTracker.ShowTotalCollected"
-#define CVAR_NAME_SEPARATE_TOTAL_COLLECTED "gRando.CheckTracker.SeparateCollectedChecks"
-
 #define CVAR_SHOW_WORLD_TRACKER CVarGetInteger(CVAR_NAME_SHOW_WORLD_TRACKER, 0)
-#define CVAR_SHOW_CURRENT_LEVEL CVarGetInteger(CVAR_NAME_SHOW_CURRENT_LEVEL, 0)
-#define CVAR_SHOW_TOTAL_COLLECTED CVarGetInteger(CVAR_NAME_SHOW_TOTAL_COLLECTED, 0)
-#define CVAR_SHOW_SEPARATE_TOTAL_COLLECTED CVarGetInteger(CVAR_NAME_SEPARATE_TOTAL_COLLECTED, 0)
 
 extern "C" {
 extern u8 D_80385FF0[0xE];
@@ -62,7 +56,7 @@ void WorldTracker_PopImageButtonStyle() {
 }
 
 void WorldTracker_DrawTotals() {
-    bool isEmbedded = !CVAR_SHOW_SEPARATE_TOTAL_COLLECTED;
+    bool isEmbedded = !Prefs::Trackers::WorldTracker::SeparateTotals;
 
     if (!isEmbedded) {
         ImGui::Begin("SplitWorldTrackerTotals", nullptr,
@@ -189,11 +183,11 @@ void WorldTracker_DrawTracker() {
     if (gsworld_getMap() == MAP_91_FILE_SELECT) {
         ImGui::TextColored(UIWidgets::ColorValues.at(UIWidgets::Colors::Orange), "No File Selected...");
     } else {
-        if (CVAR_SHOW_TOTAL_COLLECTED) {
+        if (Prefs::Trackers::WorldTracker::ShowTotalCollected) {
             WorldTracker_DrawTotals();
         }
         if (ImGui::BeginChild("WorldTrackerChild")) {
-            if (CVAR_SHOW_CURRENT_LEVEL) {
+            if (Prefs::Trackers::WorldTracker::ShowCurrentLevel) {
                 level_e currentLevel = map_getLevel(gsworld_getMap());
                 if (currentLevel < LEVEL_1_MUMBOS_MOUNTAIN || currentLevel > LEVEL_B_SPIRAL_MOUNTAIN) {
                     ImGui::TextColored(UIWidgets::ColorValues.at(UIWidgets::Colors::Orange),
@@ -265,7 +259,7 @@ void UpdateWorldTracker() {
             worldTrackerObject[i].hasJinjo[jinjoIndex] = (collectedJinjos & jinjoBit) != 0 ? 1 : 0;
         }
 
-        if (CVAR_SHOW_TOTAL_COLLECTED) {
+        if (Prefs::Trackers::WorldTracker::ShowTotalCollected) {
             UpdateWorldTrackerTotals(worldTrackerObject[i]);
         }
     }
@@ -323,12 +317,16 @@ void SettingsWindow::DrawElement() {
 
         ImGui::TableNextColumn();
         ImGui::SeparatorText("Window Settings");
-        UIWidgets::CVarCheckbox("Only Show Current Level", CVAR_NAME_SHOW_CURRENT_LEVEL);
-        if (UIWidgets::CVarCheckbox("Display Game Total", CVAR_NAME_SHOW_TOTAL_COLLECTED)) {
+        UIWidgets::PrefCheckbox("Only Show Current Level",
+                                UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::WorldTracker::ShowCurrentLevel));
+        if (UIWidgets::PrefCheckbox(
+                "Display Game Total",
+                UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::WorldTracker::ShowTotalCollected))) {
             UpdateWorldTracker();
         }
-        ImGui::BeginDisabled(!CVAR_SHOW_TOTAL_COLLECTED);
-        UIWidgets::CVarCheckbox("Separate Total Collected Checks", CVAR_NAME_SEPARATE_TOTAL_COLLECTED);
+        ImGui::BeginDisabled(!Prefs::Trackers::WorldTracker::ShowTotalCollected);
+        UIWidgets::PrefCheckbox("Separate Game Totals",
+                                UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::WorldTracker::SeparateTotals));
         ImGui::EndDisabled();
 
         ImGui::EndTable();
