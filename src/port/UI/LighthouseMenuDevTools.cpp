@@ -154,7 +154,6 @@ void LighthouseMenu::AddMenuDevTools() {
     path.sidebarName = "Save Editor";
     AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     AddWidget(path, "Popout Save Editor", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("SaveEditor"))
         .WindowName("Save Editor")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip("Enables the separate Save Editor Window."));
@@ -163,7 +162,6 @@ void LighthouseMenu::AddMenuDevTools() {
     path.sidebarName = "Gameplay Tools";
     AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     AddWidget(path, "Popout Gameplay Tools", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("GameplayTools"))
         .WindowName("Gameplay Tools")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip("Enables the separate Gameplay Tools Window."));
@@ -172,7 +170,6 @@ void LighthouseMenu::AddMenuDevTools() {
     path.sidebarName = "Stats";
     AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     AddWidget(path, "Popout Stats", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("Stats"))
         .WindowName("Stats")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip(
@@ -182,7 +179,6 @@ void LighthouseMenu::AddMenuDevTools() {
     // path.sidebarName = "Console";
     // AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     // AddWidget(path, "Popout Console", WIDGET_WINDOW_BUTTON)
-    //    .CVar(CVAR_WINDOW("DevConsole"))
     //    .WindowName("Console##Dev")
     //    .HideInSearch(true)
     //    .Options(WindowButtonOptions().Tooltip("Enables the separate Console Window."));
@@ -190,7 +186,6 @@ void LighthouseMenu::AddMenuDevTools() {
     path.sidebarName = "Event Debugger";
     AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     AddWidget(path, "Popout Event Debugger", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("EventDebugger"))
         .WindowName("Event Debugger")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip("Enables the separate Event Debugger Window."));
@@ -198,7 +193,6 @@ void LighthouseMenu::AddMenuDevTools() {
     path.sidebarName = "Occlusion Debugger";
     AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     AddWidget(path, "Popout Occlusion Debugger", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("OcclusionDebug"))
         .WindowName("Occlusion Debugger")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip(
@@ -208,7 +202,6 @@ void LighthouseMenu::AddMenuDevTools() {
     // path.sidebarName = "Object Viewer";
     // AddSidebarEntry("Dev Tools", path.sidebarName, 1);
     // AddWidget(path, "Popout Object Viewer", WIDGET_WINDOW_BUTTON)
-    //     .CVar(CVAR_WINDOW("ObjectViewer"))
     //     .WindowName("Object Viewer##Dev")
     //     .HideInSearch(true)
     //     .Options(WindowButtonOptions().Tooltip("Enables the separate Object Viewer Window."));

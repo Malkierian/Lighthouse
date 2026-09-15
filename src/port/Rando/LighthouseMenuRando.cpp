@@ -273,7 +273,6 @@ void LighthouseMenu::AddMenuRando() {
     path.sidebarName = "Check Tracker";
     AddSidebarEntry("Rando", path.sidebarName, 1);
     AddWidget(path, "Popout Settings", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("CheckTrackerSettings"))
         .WindowName("Check Tracker Settings")
         .HideInSearch(true);
 }

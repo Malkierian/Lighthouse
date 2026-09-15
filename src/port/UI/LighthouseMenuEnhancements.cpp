@@ -725,7 +725,6 @@ void LighthouseMenu::AddMenuEnhancements() {
     path.sidebarName = "World Tracker";
     AddSidebarEntry("Enhancements", path.sidebarName, 1);
     AddWidget(path, "Popout Settings", WIDGET_WINDOW_BUTTON)
-        .CVar("gWindows.WorldTrackerSettings")
         .WindowName("World Tracker Settings")
         .HideInSearch(true);
 }

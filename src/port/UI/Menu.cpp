@@ -505,7 +505,7 @@ void Menu::MenuDrawItem(WidgetInfo& widget, uint32_t width, UIWidgets::Colors me
                 auto options = std::static_pointer_cast<UIWidgets::WindowButtonOptions>(widget.options);
                 options->color = menuThemeIndex;
                 if (options->showButton) {
-                    UIWidgets::WindowButton(widget.name.c_str(), widget.cVar, window, *options);
+                    UIWidgets::WindowButton(widget.name.c_str(), window, *options);
                 }
                 if (!window->IsVisible() && options->embedWindow) {
                     window->DrawElement();

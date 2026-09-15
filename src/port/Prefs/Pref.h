@@ -8,10 +8,12 @@
 
 #include <stdint.h>
 
+#include <cassert>
 #include <functional>
 #include <map>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
@@ -47,8 +49,16 @@ concept HasSize = requires(const V& v) {
     v.size();
 };
 
+template <typename V>
+inline constexpr bool kCVarSyncable = std::is_same_v<V, bool> || std::is_same_v<V, int32_t> ||
+                                      std::is_same_v<V, float> || std::is_same_v<V, std::string> ||
+                                      std::is_same_v<V, Color_RGBA8>;
+
+enum class CVarRead { Absent, Unusable, Ok };
+
 template <typename V> struct Options {
-    const char* cvar = nullptr; // optional legacy name for console/remote lookup
+    const char* cvar = nullptr; // legacy name for console/remote lookup, migration and sync
+    bool syncCvar = false;      // outside writes to the CVar are adopted too
     std::optional<V> min, max;  // arithmetic types only
     bool clamp = true;          // min/max and maxSize violations: clamp when true, reject when false
     size_t maxSize = 0;         // strings and containers; 0 = unlimited
@@ -60,6 +70,10 @@ template <typename V> struct Options {
 
     Options& CVar(const char* cvar_) {
         cvar = cvar_;
+        return *this;
+    }
+    Options& SyncCVar(bool syncCvar_ = true) {
+        syncCvar = syncCvar_;
         return *this;
     }
     Options& Min(V min_) {
@@ -90,7 +104,7 @@ template <typename V> struct Options {
 
 class Base {
 public:
-    Base(PrefSection section, std::string path, const char* cvar);
+    Base(PrefSection section, std::string path, const char* cvar, bool syncCvar = false);
     virtual ~Base();
 
     Base(const Base&) = delete;
@@ -112,6 +126,9 @@ public:
     bool IsExplicitlySet() const {
         return mSet;
     }
+    bool SyncsCVar() const {
+        return mSyncCvar;
+    }
 
     virtual bool IsDefault() const = 0;
     virtual void Reset() = 0;
@@ -119,6 +136,10 @@ public:
     // Validates and applies. Returns false if the node was rejected, in which case the caller
     // leaves it in the document untouched rather than destroying it.
     virtual bool Read(const nlohmann::json& in) = 0;
+
+    virtual void WriteCVar() const = 0;
+    // live notifies like Set. False only when the CVar is absent.
+    virtual bool AdoptCVar(bool live) = 0;
 
     void SetOnChange(std::function<void(Base&)> callback) {
         mOnChange = std::move(callback);
@@ -133,11 +154,13 @@ public:
 protected:
     void MarkChanged(bool valueChanged);
     void MarkReset(bool valueChanged);
+    void MarkLoaded();
 
     PrefSection mSection;
     std::string mPath;
     std::string mFullPath;
     const char* mCvar;
+    bool mSyncCvar;
     bool mSet = false;
     std::function<void(Base&)> mOnChange;
 };
@@ -147,8 +170,10 @@ protected:
 template <typename V> class Scalar : public Base {
 public:
     Scalar(PrefSection section, std::string path, V def, Options<V> options = {})
-        : Base(section, std::move(path), options.cvar), mValue(def), mDefault(std::move(def)),
-          mOptions(std::move(options)) {
+        : Base(section, std::move(path), options.cvar,
+               options.syncCvar && options.cvar != nullptr && kCVarSyncable<V>),
+          mValue(def), mDefault(std::move(def)), mOptions(std::move(options)) {
+        assert((!mOptions.syncCvar || mSyncCvar) && "SyncCVar needs a CVar name and a syncable type");
     }
 
     const V& Get() const {
@@ -189,6 +214,8 @@ public:
 
     void Write(nlohmann::json& out) const override;
     bool Read(const nlohmann::json& in) override;
+    void WriteCVar() const override;
+    bool AdoptCVar(bool live) override;
 
     bool Validate(V& value) const;
 
@@ -197,6 +224,8 @@ public:
     }
 
 protected:
+    bool ApplyCVarRead(CVarRead result, const V& value, bool live);
+
     V mValue;
     V mDefault;
     Options<V> mOptions;
@@ -297,6 +326,10 @@ public:
 
     // Rounds to the nearest stored unit.
     void SetFloat(float value);
+
+    // The CVar holds Float(), not stored units.
+    void WriteCVar() const override;
+    bool AdoptCVar(bool live) override;
 
 protected:
     int32_t mFactor;

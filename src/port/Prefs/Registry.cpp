@@ -34,7 +34,7 @@ std::string FilePath() {
     return Ship::Context::GetPathRelativeToAppDirectory(kFileName);
 }
 
-// Both containers are intentionally leaked. Prefs have static lifetime, so a registry
+// The registry's containers are intentionally leaked. Prefs have static lifetime, so a registry
 // destroyed first would leave their destructors touching freed memory at exit.
 nlohmann::json& Doc() {
     static nlohmann::json* doc = new nlohmann::json(nlohmann::json::object());
@@ -66,6 +66,11 @@ nlohmann::json::json_pointer PointerFor(const Base& pref) {
 std::vector<Base*>& AllSettings() {
     static std::vector<Base*>* all = new std::vector<Base*>();
     return *all;
+}
+
+std::vector<Base*>& SyncedSettings() {
+    static std::vector<Base*>* synced = new std::vector<Base*>();
+    return *synced;
 }
 
 nlohmann::json& Document() {
@@ -157,6 +162,12 @@ void Load() {
     if (!existed) {
         MarkDirty();
     }
+
+    // MigrateLegacyCVars();
+
+    for (Base* pref : SyncedSettings()) {
+        pref->WriteCVar();
+    }
 }
 
 void Save() {
@@ -191,6 +202,38 @@ void FlushIfDirty() {
 void FlushNow() {
     if (sDirty) {
         Save();
+    }
+}
+
+void SyncCVars() {
+    if (!sLoaded) {
+        return;
+    }
+    for (Base* pref : SyncedSettings()) {
+        // Absent means default: GuiWindow clears its CVar when hidden.
+        if (!pref->AdoptCVar(true) && !pref->IsDefault()) {
+            pref->Reset();
+        }
+    }
+}
+
+void MigrateLegacyCVars() {
+    constexpr const char* kMigratedKey = "legacyCVarsMigrated";
+    if (Doc().value(kMigratedKey, false)) {
+        return;
+    }
+    for (Base* pref : AllSettings()) {
+        if (pref->CVar() != nullptr && !pref->IsExplicitlySet()) {
+            pref->AdoptCVar(false);
+        }
+    }
+    Doc()[kMigratedKey] = true;
+    MarkDirty();
+}
+
+void ResetAll() {
+    for (Base* pref : AllSettings()) {
+        pref->Reset();
     }
 }
 

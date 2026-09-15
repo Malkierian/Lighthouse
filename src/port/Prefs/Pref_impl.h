@@ -42,6 +42,26 @@ inline void from_json(const nlohmann::json& j, ColorValue& c) {
     c.locked = j.value("locked", false);
 }
 
+namespace detail {
+CVarRead ReadCVar(const char* name, bool& out);
+CVarRead ReadCVar(const char* name, int32_t& out);
+CVarRead ReadCVar(const char* name, float& out);
+CVarRead ReadCVar(const char* name, std::string& out);
+CVarRead ReadCVar(const char* name, Color_RGBA8& out);
+CVarRead ReadCVar(const char* name, ColorValue& out);
+template <typename V> CVarRead ReadCVar(const char*, V&) {
+    return CVarRead::Unusable;
+}
+
+void WriteCVar(const char* name, bool value);
+void WriteCVar(const char* name, int32_t value);
+void WriteCVar(const char* name, float value);
+void WriteCVar(const char* name, const std::string& value);
+void WriteCVar(const char* name, const Color_RGBA8& value);
+template <typename V> void WriteCVar(const char*, const V&) {
+}
+} // namespace detail
+
 template <typename V> bool Scalar<V>::Validate(V& value) const {
     if constexpr (std::is_arithmetic_v<V>) {
         if (mOptions.min.has_value() && value < *mOptions.min) {
@@ -120,6 +140,43 @@ template <typename V> bool Scalar<V>::Read(const nlohmann::json& in) {
     }
 
     mValue = std::move(parsed);
+    return true;
+}
+
+template <typename V> void Scalar<V>::WriteCVar() const {
+    if (mSyncCvar) {
+        detail::WriteCVar(mCvar, mValue);
+    }
+}
+
+template <typename V> bool Scalar<V>::AdoptCVar(bool live) {
+    if (mCvar == nullptr) {
+        return false;
+    }
+    V value = mValue;
+    const CVarRead result = detail::ReadCVar(mCvar, value);
+    return ApplyCVarRead(result, value, live);
+}
+
+template <typename V> bool Scalar<V>::ApplyCVarRead(CVarRead result, const V& value, bool live) {
+    if (result == CVarRead::Absent) {
+        return false;
+    }
+    if (result == CVarRead::Ok && !ValueEquals(value, mValue)) {
+        if (live) {
+            Set(value);
+        } else {
+            V validated = value;
+            if (Validate(validated)) {
+                mValue = std::move(validated);
+                mSet = true;
+                MarkLoaded();
+            }
+        }
+    }
+    if (live && (result == CVarRead::Unusable || !ValueEquals(value, mValue))) {
+        WriteCVar();
+    }
     return true;
 }
 
