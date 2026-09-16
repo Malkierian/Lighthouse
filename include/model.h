@@ -8,6 +8,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4200)  // zero-sized arrays; /wd4200 is ignored under /external:W
+#endif
+
 /* Model header
  * Contains offsets relative to the start of the file to the various sections
  * If a section is not present in the file, the offset will be zero

@@ -14,6 +14,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4200)  // zero-sized arrays; /wd4200 is ignored under /external:W
+#endif
+
 typedef struct sprite_prop_s{
     u32 spriteId:0xC;
     u32 unk0_19:0x1;

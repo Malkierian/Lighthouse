@@ -220,9 +220,14 @@ file(GLOB_RECURSE ALL_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/ultralib/**/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/**/*"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libultraship/include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libultraship/include/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libultraship/src/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/libultraship/src/*.hpp"
 )
 
 list(FILTER ALL_FILES EXCLUDE REGEX "src/unused/")
+list(FILTER ALL_FILES EXCLUDE REGEX "^libultraship/.*/(CMakeFiles|x64|[^/]*\\.dir)/")
 
 list(APPEND ALL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Resource.rc)
 
