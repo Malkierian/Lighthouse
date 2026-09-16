@@ -240,7 +240,7 @@ void AnchorMainMenu(WidgetInfo& info) {
         ImGui::SameLine();
     }
 
-    UIWidgets::WindowButton("Toggle Anchor Room Window", CVAR_WINDOW("AnchorRoom"), LighthouseGui::mAnchorRoomWindow);
+    UIWidgets::WindowButton("Toggle Anchor Room Window", LighthouseGui::mAnchorRoomWindow);
 
     ImGui::Spacing();
 

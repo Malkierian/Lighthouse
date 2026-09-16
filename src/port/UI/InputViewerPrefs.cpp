@@ -2,9 +2,7 @@
 
 #define CVAR_INPUT_VIEWER(var) "gInputViewer." var
 
-namespace Prefs::Settings {
-
-namespace InputViewer {
+namespace Prefs::Settings::InputViewer {
 
 static const std::map<int32_t, Prefs::EnumEntry> buttonOutlineEntries = {
     { BUTTON_OUTLINE_ALWAYS_SHOWN, { "always_shown", "Always Shown" } },
@@ -161,6 +159,4 @@ Prefs::Enum OutlineMode{ PrefSection::SECTION_SETTINGS, confPath + "OutlineMode"
                          Prefs::Options<int32_t>().CVar(CVAR_INPUT_VIEWER("RightStick.OutlineMode")) };
 } // namespace RightStick
 
-} // namespace InputViewer
-
-} // namespace Prefs::Settings
+} // namespace Prefs::Settings::InputViewer

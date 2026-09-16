@@ -6,10 +6,6 @@
 #include "fast/Fast3dGui.h"
 #include "functions.h"
 
-// Window visibility stays a CVar: Ship::GuiWindow owns it.
-#define CVAR_NAME_SHOW_WORLD_TRACKER "gWindows.WorldTracker"
-#define CVAR_SHOW_WORLD_TRACKER CVarGetInteger(CVAR_NAME_SHOW_WORLD_TRACKER, 0)
-
 extern "C" {
 extern u8 D_80385FF0[0xE];
 #define MUMBO_TOKEN_COUNT 126
@@ -17,7 +13,6 @@ extern u8 D_80385FF0[0xE];
 extern u8 sMumboTokenScore[MUMBOSCORE_SIZE];
 }
 
-bool worldTrackerPopoutState = false;
 ImVec4 worldTrackerBG = ImVec4{ 0, 0, 0, 0.5f };
 static ImVec2 imageSize = ImVec2(32.0f, 32.0f);
 
@@ -266,7 +261,7 @@ void UpdateWorldTracker() {
 }
 
 void WorldTrackerWindow::Draw() {
-    if (!CVAR_SHOW_WORLD_TRACKER) {
+    if (!IsVisible()) {
         return;
     }
 
@@ -290,15 +285,12 @@ void WorldTrackerWindow::Draw() {
 }
 
 void SettingsWindow::DrawElement() {
-    if (CVarGetInteger("gWindows.WorldTracker", 0)) {
-        worldTrackerPopoutState = true;
-        UIWidgets::WindowButton("Return World Tracker", "gWindows.WorldTracker", LighthouseGui::mWorldTrackerWindow,
-                                { .size = UIWidgets::Sizes::Inline, .color = UIWidgets::Colors::Red });
-    } else {
-        worldTrackerPopoutState = false;
-        UIWidgets::WindowButton("Popout World Tracker", "gWindows.WorldTracker", LighthouseGui::mWorldTrackerWindow,
-                                { .size = UIWidgets::Sizes::Inline, .color = UIWidgets::Colors::Green });
-    }
+    UIWidgets::WindowButton("Popout World Tracker", LighthouseGui::mWorldTrackerWindow,
+                            UIWidgets::WindowButtonOptions()
+                                .Size(UIWidgets::Sizes::Inline)
+                                .Color(UIWidgets::Colors::Green)
+                                .OpenLabel("Return World Tracker")
+                                .OpenColor(UIWidgets::Colors::Red));
 
     if (ImGui::BeginTable("SettingsTable", 2)) {
         ImGui::TableSetupColumn("col1", ImGuiTableColumnFlags_WidthStretch);
@@ -306,7 +298,7 @@ void SettingsWindow::DrawElement() {
         ImGui::TableNextColumn();
 
         ImGui::SeparatorText("World Tracker");
-        if (!worldTrackerPopoutState) {
+        if (!LighthouseGui::mWorldTrackerWindow->IsVisible()) {
             if (ImGui::BeginChild("EmbeddedWorldTrackerChild")) {
                 WorldTracker_DrawTracker();
                 ImGui::EndChild();
@@ -319,9 +311,8 @@ void SettingsWindow::DrawElement() {
         ImGui::SeparatorText("Window Settings");
         UIWidgets::PrefCheckbox("Only Show Current Level",
                                 UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::WorldTracker::ShowCurrentLevel));
-        if (UIWidgets::PrefCheckbox(
-                "Display Game Total",
-                UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::WorldTracker::ShowTotalCollected))) {
+        if (UIWidgets::PrefCheckbox("Display Game Total", UIWidgets::CheckboxOptions().Setting(
+                                                              &Prefs::Trackers::WorldTracker::ShowTotalCollected))) {
             UpdateWorldTracker();
         }
         ImGui::BeginDisabled(!Prefs::Trackers::WorldTracker::ShowTotalCollected);
@@ -340,3 +331,17 @@ void Init() {
 }
 
 } // namespace WorldTracker
+
+// Prefs
+
+namespace Prefs::Trackers::WorldTracker {
+
+std::string confPath = "WorldTracker.";
+
+Prefs::Bool ShowCurrentLevel{ PrefSection::SECTION_TRACKERS, confPath + "ShowCurrentLevel", false,
+                              Prefs::Options<bool>().CVar("gRando.WorldTracker.ShowCurrentLevel") };
+Prefs::Bool ShowTotalCollected{ PrefSection::SECTION_TRACKERS, confPath + "ShowTotalCollected", false,
+                                Prefs::Options<bool>().CVar("gRando.WorldTracker.ShowTotalCollected") };
+Prefs::Bool SeparateTotals{ PrefSection::SECTION_TRACKERS, confPath + "SeparateTotals", false };
+
+} // namespace Prefs::Trackers::WorldTracker

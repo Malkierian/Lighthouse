@@ -266,9 +266,8 @@ void SetNativeFramebufferSize(const int* width, const int* height) {
 
 void RegisterOverlay() {
     auto gui = Ship::Context::GetRawInstance()->GetWindow()->GetGui();
-    auto overlay = std::make_shared<NametagOverlay>(CVAR_WINDOW("NametagOverlay"), "Nametag Overlay");
+    auto overlay = std::make_shared<NametagOverlay>("", true, "Nametag Overlay");
     gui->AddGuiWindow(overlay);
-    overlay->Show();
 }
 
 void BeginDraw() {

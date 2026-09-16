@@ -15,6 +15,8 @@
 #include <port/switch/SwitchImpl.h>
 #endif
 
+#include "port/Prefs/Pref.h"
+
 // #include "Enhancements/Trackers/ItemTracker/ItemTracker.h"
 // #include "Enhancements/Trackers/ItemTracker/ItemTrackerSettings.h"
 #include "port/Enhancements/Trackers/DisplayOverlay.h"
@@ -33,6 +35,7 @@
 // #include "DeveloperTools/HookDebugger.h"
 #include "DeveloperTools/SaveEditor.h"
 #include "DeveloperTools/GameplayTools.h"
+#include "port/Prefs/Sections/SettingsPrefs.h"
 // #include "DeveloperTools/ActorViewer.h"
 // #include "DeveloperTools/CollisionViewer.h"
 // #include "DeveloperTools/EventLog.h"
@@ -80,18 +83,33 @@ std::shared_ptr<EventDebuggerWindow> mEventDebuggerWindow;
 std::shared_ptr<OcclusionDebugWindow> mOcclusionDebugWindow;
 std::shared_ptr<AnchorRoomWindow> mAnchorRoomWindow;
 
+namespace WindowPrefs = Prefs::Settings::Windows;
+
+void BindVisibility(const std::shared_ptr<Ship::GuiWindow>& window, Prefs::Bool& pref) {
+    if (window == nullptr) {
+        return;
+    }
+    std::weak_ptr<Ship::GuiWindow> weakWindow = window;
+    pref.SetOnChange([weakWindow, &pref](Prefs::Base&) {
+        const auto shared = weakWindow.lock();
+        if (shared != nullptr && shared->IsVisible() != pref.Get()) {
+            shared->ToggleVisibility();
+        }
+    });
+}
+
 UIWidgets::Colors GetMenuThemeColor() {
     return mLighthouseMenu->GetMenuThemeColor();
 }
 
 void SetupMenu() {
     auto gui = Ship::Context::GetRawInstance()->GetWindow()->GetGui();
-    mLighthouseMenu = std::make_shared<LighthouseGui::LighthouseMenu>(CVAR_WINDOW("Menu"), "Port Menu");
+    mLighthouseMenu = std::make_shared<LighthouseGui::LighthouseMenu>(WindowPrefs::Menu.CVar(), "Port Menu");
     gui->SetMenu(mLighthouseMenu);
+    BindVisibility(mLighthouseMenu, WindowPrefs::Menu);
 
-    mModalWindow = std::make_shared<LighthouseModalWindow>(CVAR_WINDOW("ModalWindow"), "Modal Window");
+    mModalWindow = std::make_shared<LighthouseModalWindow>("", true, "Modal Window");
     gui->AddGuiWindow(mModalWindow);
-    mModalWindow->Show();
 }
 
 void SetupGuiElements() {
@@ -106,41 +124,50 @@ void SetupGuiElements() {
     if (mStatsWindow == nullptr) {
         SPDLOG_ERROR("Could not find stats window");
     }
+    BindVisibility(mStatsWindow, WindowPrefs::Stats);
 
     mConsoleWindow = gui->GetGuiWindow("Console");
     if (mConsoleWindow == nullptr) {
         SPDLOG_ERROR("Could not find console window");
     }
+    BindVisibility(mConsoleWindow, WindowPrefs::Console);
 
     // mGfxDebuggerWindow = gui->GetGuiWindow("GfxDebuggerWindow");
     // if (mGfxDebuggerWindow == nullptr) {
     //     SPDLOG_ERROR("Could not find input GfxDebuggerWindow");
     // }
 
-    mInputEditorWindow =
-        std::make_shared<LighthouseInputEditorWindow>(CVAR_WINDOW("ControllerConfiguration"), "Configure Controller");
+    mInputEditorWindow = std::make_shared<LighthouseInputEditorWindow>(WindowPrefs::ControllerConfiguration.CVar(),
+                                                                       "Configure Controller");
     gui->AddGuiWindow(mInputEditorWindow);
+    BindVisibility(mInputEditorWindow, WindowPrefs::ControllerConfiguration);
 
     mGamepadMapperWindow =
-        std::make_shared<Mapper::MapperWindow>(CVAR_WINDOW("GamepadMapper"), "Gamepad Mapper", ImVec2(1280, 820));
+        std::make_shared<Mapper::MapperWindow>(WindowPrefs::GamepadMapper.CVar(), "Gamepad Mapper", ImVec2(1280, 820));
     gui->AddGuiWindow(mGamepadMapperWindow);
+    BindVisibility(mGamepadMapperWindow, WindowPrefs::GamepadMapper);
 
-    mModMenuWindow = std::make_shared<LighthouseModMenuWindow>(CVAR_WINDOW("ModMenu"), "Mod Menu");
+    mModMenuWindow = std::make_shared<LighthouseModMenuWindow>(WindowPrefs::ModMenu.CVar(), "Mod Menu");
     gui->AddGuiWindow(mModMenuWindow);
+    BindVisibility(mModMenuWindow, WindowPrefs::ModMenu);
 
-    mRomhackMenuWindow = std::make_shared<LighthouseRomhackMenuWindow>(CVAR_WINDOW("RomhackMenu"), "Romhack Menu");
+    mRomhackMenuWindow = std::make_shared<LighthouseRomhackMenuWindow>(WindowPrefs::RomhackMenu.CVar(), "Romhack Menu");
     gui->AddGuiWindow(mRomhackMenuWindow);
+    BindVisibility(mRomhackMenuWindow, WindowPrefs::RomhackMenu);
 
     // mHookDebuggerWindow =
     //     std::make_shared<HookDebuggerWindow>({CVAR_WINDOW("HookDebugger")}, "Hook Debugger", ImVec2(480, 600));
     // gui->AddGuiWindow(mHookDebuggerWindow);
 
-    mSaveEditorWindow = std::make_shared<SaveEditorWindow>(CVAR_WINDOW("SaveEditor"), "Save Editor", ImVec2(480, 600));
+    mSaveEditorWindow =
+        std::make_shared<SaveEditorWindow>(WindowPrefs::SaveEditor.CVar(), "Save Editor", ImVec2(480, 600));
     gui->AddGuiWindow(mSaveEditorWindow);
+    BindVisibility(mSaveEditorWindow, WindowPrefs::SaveEditor);
 
     mGameplayToolsWindow =
-        std::make_shared<GameplayToolsWindow>(CVAR_WINDOW("GameplayTools"), "Gameplay Tools", ImVec2(480, 600));
+        std::make_shared<GameplayToolsWindow>(WindowPrefs::GameplayTools.CVar(), "Gameplay Tools", ImVec2(480, 600));
     gui->AddGuiWindow(mGameplayToolsWindow);
+    BindVisibility(mGameplayToolsWindow, WindowPrefs::GameplayTools);
 
     // mHudEditorWindow = std::make_shared<HudEditorWindow>(CVAR_WINDOW("HudEditor"), "HUD Editor", ImVec2(480, 600));
     // gui->AddGuiWindow(mHudEditorWindow);
@@ -177,7 +204,7 @@ void SetupGuiElements() {
     //                                                                          400));
     // gui->AddGuiWindow(mItemTrackerSettingsWindow);
 
-    mDisplayOverlayWindow = std::make_shared<DisplayOverlayWindow>(CVAR_WINDOW("DisplayOverlay"), "Display Overlay");
+    mDisplayOverlayWindow = std::make_shared<DisplayOverlayWindow>("", "Display Overlay");
     gui->AddGuiWindow(mDisplayOverlayWindow);
 
     // mTimesplitsWindow = std::make_shared<TimesplitsWindow>(CVAR_WINDOW("Timesplits"), "Time Splits Window");
@@ -187,45 +214,53 @@ void SetupGuiElements() {
     //     CVAR_WINDOW("Timesplits.Settings"), "Time Splits Settings Window", ImVec2(567, 97));
     // gui->AddGuiWindow(mTimesplitsSettingsWindow);
 
-    mNotificationWindow = std::make_shared<Notification::Window>(CVAR_WINDOW("Notifications"), "Notifications Window");
+    mNotificationWindow = std::make_shared<Notification::Window>("", true, "Notifications Window");
     gui->AddGuiWindow(mNotificationWindow);
-    mNotificationWindow->Show();
 
     mRandoCheckTrackerWindow = std::make_shared<Rando::CheckTracker::CheckTrackerWindow>(
-        CVAR_WINDOW("CheckTracker"), "Check Tracker", ImVec2(375, 460));
+        WindowPrefs::CheckTracker.CVar(), "Check Tracker", ImVec2(375, 460));
     gui->AddGuiWindow(mRandoCheckTrackerWindow);
+    BindVisibility(mRandoCheckTrackerWindow, WindowPrefs::CheckTracker);
 
     mRandoCheckTrackerSettingsWindow = std::make_shared<Rando::CheckTracker::SettingsWindow>(
-        CVAR_WINDOW("CheckTrackerSettings"), "Check Tracker Settings");
+        WindowPrefs::CheckTrackerSettings.CVar(), "Check Tracker Settings");
     gui->AddGuiWindow(mRandoCheckTrackerSettingsWindow);
+    BindVisibility(mRandoCheckTrackerSettingsWindow, WindowPrefs::CheckTrackerSettings);
 
-    mWorldTrackerWindow = std::make_shared<WorldTracker::WorldTrackerWindow>(CVAR_WINDOW("WorldTracker"),
+    mWorldTrackerWindow = std::make_shared<WorldTracker::WorldTrackerWindow>(WindowPrefs::WorldTracker.CVar(),
                                                                              "World Tracker", ImVec2(375, 460));
     gui->AddGuiWindow(mWorldTrackerWindow);
+    BindVisibility(mWorldTrackerWindow, WindowPrefs::WorldTracker);
 
-    mWorldTrackerSettingsWindow =
-        std::make_shared<WorldTracker::SettingsWindow>(CVAR_WINDOW("WorldTrackerSettings"), "World Tracker Settings");
+    mWorldTrackerSettingsWindow = std::make_shared<WorldTracker::SettingsWindow>(
+        WindowPrefs::WorldTrackerSettings.CVar(), "World Tracker Settings");
     gui->AddGuiWindow(mWorldTrackerSettingsWindow);
+    BindVisibility(mWorldTrackerSettingsWindow, WindowPrefs::WorldTrackerSettings);
 
-    mEggAimCrosshair = std::make_shared<EggAimCrosshairWindow>(CVAR_WINDOW("EggAimCrosshair"), "Egg Aim Crosshair");
+    mEggAimCrosshair = std::make_shared<EggAimCrosshairWindow>("", true, "Egg Aim Crosshair");
     gui->AddGuiWindow(mEggAimCrosshair);
-    mEggAimCrosshair->Show();
 
-    mInputViewer = std::make_shared<InputViewer>(CVAR_WINDOW("InputViewer"), "Input Viewer");
+    mInputViewer = std::make_shared<InputViewer>(WindowPrefs::InputViewer.CVar(), "Input Viewer");
     gui->AddGuiWindow(mInputViewer);
+    BindVisibility(mInputViewer, WindowPrefs::InputViewer);
 
-    mInputViewerSettings = std::make_shared<InputViewerSettingsWindow>(CVAR_WINDOW("InputViewerSettings"),
+    mInputViewerSettings = std::make_shared<InputViewerSettingsWindow>(WindowPrefs::InputViewerSettings.CVar(),
                                                                        "Input Viewer Settings", ImVec2(500, 525));
     gui->AddGuiWindow(mInputViewerSettings);
+    BindVisibility(mInputViewerSettings, WindowPrefs::InputViewerSettings);
 
-    mEventDebuggerWindow = std::make_shared<EventDebuggerWindow>(CVAR_WINDOW("EventDebugger"), "Event Debugger");
+    mEventDebuggerWindow = std::make_shared<EventDebuggerWindow>(WindowPrefs::EventDebugger.CVar(), "Event Debugger");
     gui->AddGuiWindow(mEventDebuggerWindow);
+    BindVisibility(mEventDebuggerWindow, WindowPrefs::EventDebugger);
 
-    mOcclusionDebugWindow = std::make_shared<OcclusionDebugWindow>(CVAR_WINDOW("OcclusionDebug"), "Occlusion Debugger");
+    mOcclusionDebugWindow =
+        std::make_shared<OcclusionDebugWindow>(WindowPrefs::OcclusionDebug.CVar(), "Occlusion Debugger");
     gui->AddGuiWindow(mOcclusionDebugWindow);
+    BindVisibility(mOcclusionDebugWindow, WindowPrefs::OcclusionDebug);
 
-    mAnchorRoomWindow = std::make_shared<AnchorRoomWindow>(CVAR_WINDOW("AnchorRoom"), "Anchor Room");
+    mAnchorRoomWindow = std::make_shared<AnchorRoomWindow>(WindowPrefs::AnchorRoom.CVar(), "Anchor Room");
     gui->AddGuiWindow(mAnchorRoomWindow);
+    BindVisibility(mAnchorRoomWindow, WindowPrefs::AnchorRoom);
 }
 
 void Destroy() {
@@ -239,6 +274,8 @@ void Destroy() {
     mGfxDebuggerWindow = nullptr;
     mInputEditorWindow = nullptr;
     mGamepadMapperWindow = nullptr;
+    mModMenuWindow = nullptr;
+    mRomhackMenuWindow = nullptr;
     // mCollisionViewerWindow = nullptr;
     // mEventLogWindow = nullptr;
     mNotificationWindow = nullptr;
@@ -277,3 +314,51 @@ size_t PopupsQueued() {
 }
 
 } // namespace LighthouseGui
+
+// Prefs
+namespace Prefs::Settings {
+
+namespace Windows {
+
+static Prefs::Options<bool> Synced(const char* cvar) {
+    return Prefs::Options<bool>().CVar(cvar).SyncCVar();
+}
+
+std::string confPath = "Windows.";
+Prefs::Bool Menu{ PrefSection::SECTION_SETTINGS, confPath + "Menu", false, Synced(CVAR_WINDOW("Menu")) };
+Prefs::Bool ControllerConfiguration{ PrefSection::SECTION_SETTINGS, confPath + "ControllerConfiguration", false,
+                                     Synced(CVAR_WINDOW("ControllerConfiguration")) };
+Prefs::Bool GamepadMapper{ PrefSection::SECTION_SETTINGS, confPath + "GamepadMapper", false,
+                           Synced(CVAR_WINDOW("GamepadMapper")) };
+Prefs::Bool ModMenu{ PrefSection::SECTION_SETTINGS, confPath + "ModMenu", false, Synced(CVAR_WINDOW("ModMenu")) };
+Prefs::Bool RomhackMenu{ PrefSection::SECTION_SETTINGS, confPath + "RomhackMenu", false,
+                         Synced(CVAR_WINDOW("RomhackMenu")) };
+Prefs::Bool SaveEditor{ PrefSection::SECTION_SETTINGS, confPath + "SaveEditor", false,
+                        Synced(CVAR_WINDOW("SaveEditor")) };
+Prefs::Bool GameplayTools{ PrefSection::SECTION_SETTINGS, confPath + "GameplayTools", false,
+                           Synced(CVAR_WINDOW("GameplayTools")) };
+Prefs::Bool CheckTracker{ PrefSection::SECTION_SETTINGS, confPath + "CheckTracker", false,
+                          Synced(CVAR_WINDOW("CheckTracker")) };
+Prefs::Bool CheckTrackerSettings{ PrefSection::SECTION_SETTINGS, confPath + "CheckTrackerSettings", false,
+                                  Synced(CVAR_WINDOW("CheckTrackerSettings")) };
+Prefs::Bool WorldTracker{ PrefSection::SECTION_SETTINGS, confPath + "WorldTracker", false,
+                          Synced(CVAR_WINDOW("WorldTracker")) };
+Prefs::Bool WorldTrackerSettings{ PrefSection::SECTION_SETTINGS, confPath + "WorldTrackerSettings", false,
+                                  Synced(CVAR_WINDOW("WorldTrackerSettings")) };
+Prefs::Bool InputViewer{ PrefSection::SECTION_SETTINGS, confPath + "InputViewer", false,
+                         Synced(CVAR_WINDOW("InputViewer")) };
+Prefs::Bool InputViewerSettings{ PrefSection::SECTION_SETTINGS, confPath + "InputViewerSettings", false,
+                                 Synced(CVAR_WINDOW("InputViewerSettings")) };
+Prefs::Bool EventDebugger{ PrefSection::SECTION_SETTINGS, confPath + "EventDebugger", false,
+                           Synced(CVAR_WINDOW("EventDebugger")) };
+Prefs::Bool OcclusionDebug{ PrefSection::SECTION_SETTINGS, confPath + "OcclusionDebug", false,
+                            Synced(CVAR_WINDOW("OcclusionDebug")) };
+Prefs::Bool AnchorRoom{ PrefSection::SECTION_SETTINGS, confPath + "AnchorRoom", false,
+                        Synced(CVAR_WINDOW("AnchorRoom")) };
+// Match CVAR_STATS_WINDOW_OPEN and CVAR_CONSOLE_WINDOW_OPEN via lus-cvars.cmake.
+Prefs::Bool Stats{ PrefSection::SECTION_SETTINGS, confPath + "Stats", false, Synced(CVAR_WINDOW("Stats")) };
+Prefs::Bool Console{ PrefSection::SECTION_SETTINGS, confPath + "Console", false, Synced(CVAR_WINDOW("Console")) };
+
+} // namespace Windows
+
+} // namespace Prefs::Settings

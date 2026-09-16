@@ -4,6 +4,8 @@
 #include <cmath>
 #include <random>
 
+#include <libultraship/libultraship.h>
+
 #include "Registry.h"
 #include "Pref_impl.h"
 #include "port/ShipInit.hpp"
@@ -20,21 +22,27 @@ const char* SectionBlock(PrefSection section) {
     return section < SECTION_COUNT ? kSectionBlocks[section] : "";
 }
 
-Base::Base(PrefSection section, std::string path, const char* cvar)
-    : mSection(section), mPath(std::move(path)), mCvar(cvar) {
+Base::Base(PrefSection section, std::string path, const char* cvar, bool syncCvar)
+    : mSection(section), mPath(std::move(path)), mCvar(cvar), mSyncCvar(syncCvar) {
     mFullPath = std::string(SectionBlock(mSection)) + "." + mPath;
     AllSettings().push_back(this);
+    if (mSyncCvar) {
+        SyncedSettings().push_back(this);
+    }
 }
 
 Base::~Base() {
     auto& all = AllSettings();
     all.erase(std::remove(all.begin(), all.end(), this), all.end());
+    auto& synced = SyncedSettings();
+    synced.erase(std::remove(synced.begin(), synced.end(), this), synced.end());
 }
 
 void Base::MarkChanged(bool valueChanged) {
     if (StoreNode(*this)) {
         MarkDirty();
     }
+    WriteCVar();
 
     if (!valueChanged) {
         return;
@@ -51,6 +59,7 @@ void Base::MarkReset(bool valueChanged) {
     if (EraseNode(*this)) {
         MarkDirty();
     }
+    WriteCVar();
 
     if (!valueChanged) {
         return;
@@ -60,6 +69,12 @@ void Base::MarkReset(bool valueChanged) {
 
     if (mOnChange) {
         mOnChange(*this);
+    }
+}
+
+void Base::MarkLoaded() {
+    if (StoreNode(*this)) {
+        MarkDirty();
     }
 }
 
@@ -173,6 +188,155 @@ int32_t Fixed::Decimals() const {
 void Fixed::SetFloat(float value) {
     Set((int32_t)std::lround(value * (float)mFactor));
 }
+
+void Fixed::WriteCVar() const {
+    if (mSyncCvar) {
+        detail::WriteCVar(mCvar, Float());
+    }
+}
+
+bool Fixed::AdoptCVar(bool live) {
+    if (mCvar == nullptr) {
+        return false;
+    }
+    float value = Float();
+    const CVarRead result = detail::ReadCVar(mCvar, value);
+    return ApplyCVarRead(result, (int32_t)std::lround(value * (float)mFactor), live);
+}
+
+namespace detail {
+auto Vars() {
+    auto* context = Ship::Context::GetRawInstance();
+    return context != nullptr ? context->GetConsoleVariables() : nullptr;
+}
+
+auto FindCVar(const char* name) {
+    const auto vars = Vars();
+    return vars != nullptr ? vars->Get(name) : nullptr;
+} // namespace
+
+CVarRead ReadCVar(const char* name, bool& out) {
+    int32_t value = out ? 1 : 0;
+    const CVarRead result = ReadCVar(name, value);
+    if (result == CVarRead::Ok) {
+        out = value != 0;
+    }
+    return result;
+}
+
+CVarRead ReadCVar(const char* name, int32_t& out) {
+    const auto cvar = FindCVar(name);
+    if (cvar == nullptr) {
+        return CVarRead::Absent;
+    }
+    using Type = decltype(cvar->Type);
+    if (cvar->Type == Type::Integer) {
+        out = cvar->Integer;
+    } else if (cvar->Type == Type::Float) {
+        out = (int32_t)std::lround(cvar->Float);
+    } else {
+        return CVarRead::Unusable;
+    }
+    return CVarRead::Ok;
+}
+
+CVarRead ReadCVar(const char* name, float& out) {
+    const auto cvar = FindCVar(name);
+    if (cvar == nullptr) {
+        return CVarRead::Absent;
+    }
+    using Type = decltype(cvar->Type);
+    if (cvar->Type == Type::Float) {
+        out = cvar->Float;
+    } else if (cvar->Type == Type::Integer) {
+        out = (float)cvar->Integer;
+    } else {
+        return CVarRead::Unusable;
+    }
+    return CVarRead::Ok;
+}
+
+CVarRead ReadCVar(const char* name, std::string& out) {
+    const auto cvar = FindCVar(name);
+    if (cvar == nullptr) {
+        return CVarRead::Absent;
+    }
+    using Type = decltype(cvar->Type);
+    if (cvar->Type != Type::String || cvar->String == nullptr) {
+        return CVarRead::Unusable;
+    }
+    out = cvar->String;
+    return CVarRead::Ok;
+}
+
+CVarRead ReadCVar(const char* name, Color_RGBA8& out) {
+    const auto cvar = FindCVar(name);
+    if (cvar == nullptr) {
+        return CVarRead::Absent;
+    }
+    using Type = decltype(cvar->Type);
+    if (cvar->Type == Type::Color) {
+        out = cvar->Color;
+    } else if (cvar->Type == Type::Color24) {
+        out = { cvar->Color24.r, cvar->Color24.g, cvar->Color24.b, 255 };
+    } else {
+        return CVarRead::Unusable;
+    }
+    return CVarRead::Ok;
+}
+
+// CVarColorPicker's layout.
+CVarRead ReadCVar(const char* name, ColorValue& out) {
+    const std::string base = name;
+    ColorValue read = out;
+    const CVarRead results[] = {
+        ReadCVar((base + ".Value").c_str(), read.value),
+        ReadCVar((base + ".Rainbow").c_str(), read.rainbow),
+        ReadCVar((base + ".Locked").c_str(), read.locked),
+    };
+    bool anyPresent = false;
+    for (const CVarRead result : results) {
+        if (result == CVarRead::Unusable) {
+            return CVarRead::Unusable;
+        }
+        anyPresent |= result == CVarRead::Ok;
+    }
+    if (!anyPresent) {
+        return CVarRead::Absent;
+    }
+    out = read;
+    return CVarRead::Ok;
+}
+
+void WriteCVar(const char* name, bool value) {
+    WriteCVar(name, static_cast<int32_t>(value ? 1 : 0));
+}
+
+void WriteCVar(const char* name, int32_t value) {
+    if (const auto vars = Vars()) {
+        vars->SetInteger(name, value);
+    }
+}
+
+void WriteCVar(const char* name, float value) {
+    if (const auto vars = Vars()) {
+        vars->SetFloat(name, value);
+    }
+}
+
+void WriteCVar(const char* name, const std::string& value) {
+    if (const auto vars = Vars()) {
+        vars->SetString(name, value.c_str());
+    }
+}
+
+void WriteCVar(const char* name, const Color_RGBA8& value) {
+    if (const auto vars = Vars()) {
+        vars->SetColor(name, value);
+    }
+}
+
+} // namespace detail
 
 // Emitted here so Setting.h can stay on <nlohmann/json_fwd.hpp>. A module needing some other
 // V includes Setting_impl.h from its own .cpp and pays the parse cost alone.

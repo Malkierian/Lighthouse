@@ -10,6 +10,8 @@
 #include "port/Controller/ControlSchemes.h"
 #include "port/Localization/Language.h"
 #include "port/Save/SaveConverter.h"
+#include "port/Prefs/Registry.h"
+#include "port/UI/LighthouseGui.hpp"
 #include "UIWidgets.hpp"
 #include <spdlog/fmt/fmt.h>
 
@@ -94,7 +96,9 @@ static void DrawResetAll(WidgetInfo& info) {
             Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(CVAR_PREFIX_GAMEPLAY_STATS);
             Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(CVAR_PREFIX_TIME_DISPLAY);
             Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(CVAR_PREFIX_TRACKER);
-            Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(CVAR_PREFIX_WINDOW);
+            Prefs::ResetAll();
+            // Reset is pressed from inside the menu.
+            Prefs::Settings::Windows::Menu.Set(true);
         } else {
             pressed = true;
         }
@@ -454,8 +458,7 @@ void LighthouseMenu::AddMenuSettings() {
                 "This will completely erase the controls config, including registered devices.\nContinue?", "Clear",
                 "Cancel",
                 []() {
-                    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(CVAR_PREFIX_SETTING
-                                                                                       ".Controllers");
+                    Ship::Context::GetRawInstance()->GetConsoleVariables()->ClearBlock(CVAR_PREFIX_SETTING ".Controllers");
                     uint8_t bits = 0;
                     Ship::Context::GetRawInstance()->GetControlDeck()->Init(&bits);
                 },
@@ -463,7 +466,6 @@ void LighthouseMenu::AddMenuSettings() {
         })
         .Options(ButtonOptions().Size(Sizes::Inline));
     AddWidget(path, "Popout Bindings Window", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("ControllerConfiguration"))
         .RaceDisable(false)
         .WindowName("Configure Controller")
         .HideInSearch(true)
@@ -522,7 +524,6 @@ void LighthouseMenu::AddMenuSettings() {
     AddSidebarEntry("Settings", path.sidebarName, 2);
     AddWidget(path, "Input Viewer", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Toggle Input Viewer", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("InputViewer"))
         .RaceDisable(false)
         .WindowName("Input Viewer")
         .HideInSearch(true)
@@ -530,7 +531,6 @@ void LighthouseMenu::AddMenuSettings() {
 
     AddWidget(path, "Input Viewer Settings", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Popout Input Viewer Settings", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("InputViewerSettings"))
         .RaceDisable(false)
         .WindowName("Input Viewer Settings")
         .HideInSearch(true)
@@ -591,7 +591,6 @@ void LighthouseMenu::AddMenuSettings() {
     AddSidebarEntry("Settings", path.sidebarName, 1);
 
     AddWidget(path, "Popout Romhack Menu Window", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("RomhackMenu"))
         .WindowName("Romhack Menu")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip("Enables the separate Romhack Menu Window."));
@@ -601,7 +600,6 @@ void LighthouseMenu::AddMenuSettings() {
     AddSidebarEntry("Settings", path.sidebarName, 1);
 
     AddWidget(path, "Popout Mod Menu Window", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("ModMenu"))
         .WindowName("Mod Menu")
         .HideInSearch(true)
         .Options(WindowButtonOptions().Tooltip("Enables the separate Mod Menu Window."));

@@ -1694,7 +1694,6 @@ static void RegisterMapperWidgets() {
     WidgetPath path = { "Settings", "Controls", SECTION_COLUMN_2 };
     LighthouseGui::mLighthouseMenu->AddWidget(path, "Gamepad Mapper", WIDGET_SEPARATOR_TEXT);
     LighthouseGui::mLighthouseMenu->AddWidget(path, "Open Gamepad Mapper", WIDGET_WINDOW_BUTTON)
-        .CVar(CVAR_WINDOW("GamepadMapper"))
         .RaceDisable(false)
         .WindowName("Gamepad Mapper")
         .HideInSearch(true)

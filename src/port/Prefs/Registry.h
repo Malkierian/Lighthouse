@@ -12,12 +12,16 @@ namespace Prefs {
 class Base;
 
 std::vector<Base*>& AllSettings();
+std::vector<Base*>& SyncedSettings();
 void Load();
 void Save();
 void FlushIfDirty();
 void FlushNow();
 void MarkDirty();
 bool IsDirty();
+void SyncCVars();
+void MigrateLegacyCVars();
+void ResetAll();
 
 Base* Find(PrefSection section, const std::string& path);
 Base* FindByCVar(const std::string& cvar);

@@ -237,6 +237,8 @@ struct WindowButtonOptions : WidgetOptions {
     Colors color = Colors::Gray;
     bool showButton = true;
     bool embedWindow = true;
+    const char* openLabel = nullptr;
+    Colors openColor = Colors::NoColor;
 
     WindowButtonOptions& Size(ImVec2 size_) {
         size = size_;
@@ -265,6 +267,16 @@ struct WindowButtonOptions : WidgetOptions {
 
     WindowButtonOptions& EmbedWindow(bool embedWindow_) {
         embedWindow = embedWindow_;
+        return *this;
+    }
+
+    WindowButtonOptions& OpenLabel(const char* openLabel_) {
+        openLabel = openLabel_;
+        return *this;
+    }
+
+    WindowButtonOptions& OpenColor(Colors openColor_) {
+        openColor = openColor_;
         return *this;
     }
 };
@@ -735,7 +747,7 @@ void PushStyleButton(const ImVec4& color, ImVec2 padding = ImVec2(10.0f, 8.0f));
 void PushStyleButton(Colors color = Colors::Gray, ImVec2 padding = ImVec2(10.0f, 8.0f));
 void PopStyleButton();
 bool Button(const char* label, const ButtonOptions& options = {});
-bool WindowButton(const char* label, const char* cvarName, std::shared_ptr<Ship::GuiWindow> windowPtr,
+bool WindowButton(const char* label, std::shared_ptr<Ship::GuiWindow> windowPtr,
                   const WindowButtonOptions& options = {});
 
 void PushStyleCheckbox(const ImVec4& color, ImVec2 padding = ImVec2(10.0f, 6.0f));

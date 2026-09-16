@@ -126,6 +126,7 @@ GameEngine::GameEngine() {
 
     this->context->InitConfiguration();
     this->context->InitConsoleVariables();
+    Prefs::Load();
     assets_path = Ship::Context::LocateFileAcrossAppDirs("lighthouse.o2r");
     portArchiveVersionMatch = std::filesystem::exists(assets_path); // TODO: port archive versioning
 
@@ -381,7 +382,6 @@ void GameEngine::Create(int argc, char* argv[]) {
     GfxSetNativeDimensions(292, 216);
     instance->RunExtract(argc, argv);
     instance->FinishInit();
-    Prefs::Load();
     PortEnhancements_Init();
     Anchor::Init();
     SaveManager_Init();
@@ -436,6 +436,7 @@ void GameEngine::Destroy() {
 }
 
 void GameEngine::StartFrame() const {
+    Prefs::SyncCVars();
     Prefs::FlushIfDirty();
 
     using Ship::KbScancode;
