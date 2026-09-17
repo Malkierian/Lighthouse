@@ -662,7 +662,13 @@ bool PrefSlider(const char* label, const SliderOptions& options) {
             snprintf(derivedFormat, sizeof(derivedFormat), "%%.%df", decimals);
         }
     }
-    const char* barFormat = options.format != nullptr ? options.format : derivedFormat;
+    char prefixedFormat[128];
+    if (options.prefix != nullptr) {
+        snprintf(prefixedFormat, sizeof(prefixedFormat), "%s%s", options.prefix, derivedFormat);
+    }
+    const char* barFormat = options.format != nullptr   ? options.format
+                            : options.prefix != nullptr ? prefixedFormat
+                                                        : derivedFormat;
 
     // The raw label stays the id: substituting the value into it would change the id as the value
     // moves and break an in-progress drag.

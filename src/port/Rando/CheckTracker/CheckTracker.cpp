@@ -6,59 +6,6 @@
 #include <cstring>
 #include "port/GameStatus.h"
 
-#define DEFAULT_LOGIC_COLOR \
-    Color_RGBA8 {           \
-        200, 200, 200, 255  \
-    }
-#define DEFAULT_COLLECTED_COLOR \
-    Color_RGBA8 {               \
-        100, 255, 100, 255      \
-    }
-#define DEFAULT_SKIPPED_COLOR \
-    Color_RGBA8 {             \
-        255, 100, 255, 255    \
-    }
-#define DEFAULT_ITEM_COLOR \
-    Color_RGBA8 {          \
-        79, 0, 221, 255    \
-    }
-
-#define CVAR_NAME_ENABLE_FLOATING_WINDOW "gRando.CheckTracker.Floating"
-#define CVAR_NAME_CHECK_TRACKER_OPACITY "gRando.CheckTracker.Opacity"
-#define CVAR_NAME_CHECK_TRACKER_SCALE "gRando.CheckTracker.Scale"
-#define CVAR_NAME_SHOW_CURRENT_LEVEL "gRando.CheckTracker.ShowCurrentLevel"
-#define CVAR_NAME_HIDE_COMPLETED_WORLD "gRando.CheckTracker.HideCompletedWorld"
-#define CVAR_NAME_SHOW_COLLECTED_CHECKS "gRando.CheckTracker.ShowCollectedChecks"
-#define CVAR_NAME_SHOW_WORLD_CHECKS "gRando.CheckTracker.ShowWorldChecks"
-#define CVAR_NAME_SHOW_LOGIC "gRando.CheckTracker.ShowLogic"
-#define CVAR_NAME_SEPARATE_COLLECTED_CHECKS "gRando.CheckTracker.SeparateCollectedChecks"
-#define CVAR_NAME_COLLECTED_CHECKS_OPACITY "gRando.CheckTracker.CollectedChecksOpacity"
-#define CVAR_NAME_COLLECTED_CHECKS_SCALE "gRando.CheckTracker.CollectedChecksScale"
-#define CVAR_NAME_HIDE_COLLECTED "gRando.CheckTracker.HideCollected"
-#define CVAR_NAME_LOGIC_COLOR "gRando.CheckTracker.LogicColor"
-#define CVAR_NAME_COLLECTED_COLOR "gRando.CheckTracker.CollectedColor"
-#define CVAR_NAME_SKIPPED_COLOR "gRando.CheckTracker.SkippedColor"
-#define CVAR_NAME_HIDE_SKIPPED "gRando.CheckTracker.HideSkipped"
-#define CVAR_NAME_ITEM_COLOR "gRando.CheckTracker.ItemColor"
-
-#define CVAR_ENABLE_FLOATING_WINDOW CVarGetInteger(CVAR_NAME_ENABLE_FLOATING_WINDOW, 0)
-#define CVAR_CHECK_TRACKER_OPACITY CVarGetFloat(CVAR_NAME_CHECK_TRACKER_OPACITY, 0.5f)
-#define CVAR_CHECK_TRACKER_SCALE CVarGetFloat(CVAR_NAME_CHECK_TRACKER_SCALE, 1.0f)
-#define CVAR_SHOW_CURRENT_LEVEL CVarGetInteger(CVAR_NAME_SHOW_CURRENT_LEVEL, 0)
-#define CVAR_HIDE_COMPLETED_WORLD CVarGetInteger(CVAR_NAME_HIDE_COMPLETED_WORLD, 0)
-#define CVAR_SHOW_COLLECTED_CHECKS CVarGetInteger(CVAR_NAME_SHOW_COLLECTED_CHECKS, 1)
-#define CVAR_SHOW_WORLD_CHECKS CVarGetInteger(CVAR_NAME_SHOW_WORLD_CHECKS, 1)
-#define CVAR_SHOW_LOGIC CVarGetInteger(CVAR_NAME_SHOW_LOGIC, 0)
-#define CVAR_SHOW_SEPARATE_COLLECTED_CHECKS CVarGetInteger(CVAR_NAME_SEPARATE_COLLECTED_CHECKS, 0)
-#define CVAR_COLLECTED_CHECKS_OPACITY CVarGetFloat(CVAR_NAME_COLLECTED_CHECKS_OPACITY, 0.5f)
-#define CVAR_COLLECTED_CHECKS_SCALE CVarGetFloat(CVAR_NAME_COLLECTED_CHECKS_SCALE, 1.0f)
-#define CVAR_HIDE_COLLECTED CVarGetInteger(CVAR_NAME_HIDE_COLLECTED, 0)
-#define CVAR_LOGIC_COLOR CVarGetColor(CVAR_NAME_LOGIC_COLOR ".Value", DEFAULT_LOGIC_COLOR)
-#define CVAR_COLLECTED_COLOR CVarGetColor(CVAR_NAME_COLLECTED_COLOR ".Value", DEFAULT_COLLECTED_COLOR)
-#define CVAR_SKIPPED_COLOR CVarGetColor(CVAR_NAME_SKIPPED_COLOR ".Value", DEFAULT_SKIPPED_COLOR)
-#define CVAR_HIDE_SKIPPED CVarGetInteger(CVAR_NAME_HIDE_SKIPPED, 0)
-#define CVAR_ITEM_COLOR CVarGetColor(CVAR_NAME_ITEM_COLOR ".Value", DEFAULT_ITEM_COLOR)
-
 extern "C" {
 enum map_e level_get_main_map(enum level_e level_id);
 enum map_e gsworld_getMap(void);
@@ -69,11 +16,11 @@ namespace LighthouseGui {
 extern std::shared_ptr<Rando::CheckTracker::CheckTrackerWindow> mRandoCheckTrackerWindow;
 }
 
-std::vector<std::tuple<const char*, Color_RGBA8, const char*>> defaultCheckColorList = {
-    { CVAR_NAME_LOGIC_COLOR, DEFAULT_LOGIC_COLOR, "Out of Logic" },
-    { CVAR_NAME_COLLECTED_COLOR, DEFAULT_COLLECTED_COLOR, "Check Collected" },
-    { CVAR_NAME_SKIPPED_COLOR, DEFAULT_SKIPPED_COLOR, "Check Skipped" },
-    { CVAR_NAME_ITEM_COLOR, DEFAULT_ITEM_COLOR, "Obtained Item" },
+std::vector<std::pair<Prefs::Color*, const char*>> checkColorList = {
+    { &Prefs::Trackers::CheckTracker::LogicColor, "Out of Logic" },
+    { &Prefs::Trackers::CheckTracker::CollectedColor, "Check Collected" },
+    { &Prefs::Trackers::CheckTracker::SkippedColor, "Check Skipped" },
+    { &Prefs::Trackers::CheckTracker::ItemColor, "Obtained Item" },
 };
 
 std::map<RandoCheckId, std::string> checkList;
@@ -164,8 +111,8 @@ std::string CheckTracker_GetWorldCheckCountString(level_e world) {
 }
 
 void CheckTracker_DrawCheckCount() {
-    if (CVAR_SHOW_COLLECTED_CHECKS) {
-        if (CVAR_SHOW_SEPARATE_COLLECTED_CHECKS) {
+    if (Prefs::Trackers::CheckTracker::ShowCollectedChecks) {
+        if (Prefs::Trackers::CheckTracker::SeparateCollectedChecks) {
             ImGui::PushStyleColor(ImGuiCol_TitleBgActive, collectedChecksBG);
             ImGui::PushStyleColor(ImGuiCol_TitleBg, collectedChecksBG);
             ImGui::PushStyleColor(ImGuiCol_WindowBg, collectedChecksBG);
@@ -184,22 +131,23 @@ void CheckTracker_DrawCheckCount() {
 }
 
 void DrawCheckTrackerList() {
-    if (CVAR_SHOW_COLLECTED_CHECKS && !CVAR_SHOW_SEPARATE_COLLECTED_CHECKS) {
+    if (Prefs::Trackers::CheckTracker::ShowCollectedChecks && !Prefs::Trackers::CheckTracker::SeparateCollectedChecks) {
         CheckTracker_DrawCheckCount();
     }
 
     for (int i = LEVEL_1_MUMBOS_MOUNTAIN; i < WORLD_COUNT; i++) {
 
-        if (CVAR_SHOW_CURRENT_LEVEL && i != map_getLevel(gsworld_getMap())) {
+        if (Prefs::Trackers::CheckTracker::ShowCurrentLevel && i != map_getLevel(gsworld_getMap())) {
             continue;
         }
 
-        if (CVAR_HIDE_COMPLETED_WORLD && checkCountPerWorld[i] == checkCollectedCountPerWorld[i]) {
+        if (Prefs::Trackers::CheckTracker::HideCompletedWorld &&
+            checkCountPerWorld[i] == checkCollectedCountPerWorld[i]) {
             continue;
         }
 
         std::string headerName = worldNameList[i];
-        if (CVAR_SHOW_WORLD_CHECKS) {
+        if (Prefs::Trackers::CheckTracker::ShowWorldChecks) {
             headerName += " ";
             headerName += CheckTracker_GetWorldCheckCountString((level_e)i);
         }
@@ -223,29 +171,30 @@ void DrawCheckTrackerList() {
                         continue;
                     }
 
-                    if (CVAR_HIDE_COLLECTED && randoSaveCheck.eligible) {
+                    if (Prefs::Trackers::CheckTracker::HideCollected && randoSaveCheck.eligible) {
                         continue;
                     }
 
-                    if (CVAR_HIDE_SKIPPED && randoSaveCheck.skipped) {
+                    if (Prefs::Trackers::CheckTracker::HideSkipped && randoSaveCheck.skipped) {
                         continue;
                     }
 
                     ImVec4 checkTextColor = randoSaveCheck.eligible
-                                                ? VecFromRGBA8(CVAR_COLLECTED_COLOR)
+                                                ? VecFromRGBA8(Prefs::Trackers::CheckTracker::CollectedColor.Value())
                                                 : UIWidgets::ColorValues.at(UIWidgets::Colors::White);
 
                     ImVec4 itemTextColor = randoSaveCheck.eligible
-                                               ? VecFromRGBA8(CVAR_ITEM_COLOR)
+                                               ? VecFromRGBA8(Prefs::Trackers::CheckTracker::ItemColor.Value())
                                                : UIWidgets::ColorValues.at(UIWidgets::Colors::Indigo);
                     if (randoSaveCheck.skipped) {
-                        checkTextColor = itemTextColor = VecFromRGBA8(CVAR_SKIPPED_COLOR);
+                        checkTextColor = itemTextColor =
+                            VecFromRGBA8(Prefs::Trackers::CheckTracker::SkippedColor.Value());
                     }
 
-                    if (!randoSaveCheck.eligible && CVAR_SHOW_LOGIC) {
+                    if (!randoSaveCheck.eligible && Prefs::Trackers::CheckTracker::ShowLogic) {
                         checkTextColor = Rando::Logic::CanAccessCheck(randoCheckId)
                                              ? UIWidgets::ColorValues.at(UIWidgets::Colors::White)
-                                             : VecFromRGBA8(CVAR_LOGIC_COLOR);
+                                             : VecFromRGBA8(Prefs::Trackers::CheckTracker::LogicColor.Value());
                     }
 
                     ImGui::BeginGroup();
@@ -313,12 +262,12 @@ void CheckTrackerWindow::Draw() {
         ImGui::SetNextWindowSize(ImVec2(485.0f, 500.0f), ImGuiCond_FirstUseEver);
     }
 
-    if (CVAR_SHOW_COLLECTED_CHECKS && CVAR_SHOW_SEPARATE_COLLECTED_CHECKS) {
+    if (Prefs::Trackers::CheckTracker::ShowCollectedChecks && Prefs::Trackers::CheckTracker::SeparateCollectedChecks) {
         CheckTracker_DrawCheckCount();
     }
 
     if (ImGui::Begin("CheckTracker", nullptr, windowFlags)) {
-        checkTrackerBG.w = ImGui::IsWindowDocked() ? 1.0f : CVAR_CHECK_TRACKER_OPACITY;
+        checkTrackerBG.w = ImGui::IsWindowDocked() ? 1.0f : Prefs::Trackers::CheckTracker::Opacity.Float();
         ImGui::SetWindowFontScale(checkTrackerScale);
 
         if (gsworld_getMap() == MAP_91_FILE_SELECT) {
@@ -340,7 +289,7 @@ void CheckTrackerWindow::Draw() {
 
 void SettingsWindow::DrawElement() {
     windowFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoFocusOnAppearing;
-    if (CVAR_ENABLE_FLOATING_WINDOW) {
+    if (Prefs::Trackers::CheckTracker::Floating) {
         windowFlags |= ImGuiWindowFlags_NoTitleBar;
     }
 
@@ -368,47 +317,51 @@ void SettingsWindow::DrawElement() {
         ImGui::TableNextColumn();
         ImGui::SeparatorText("Window Settings");
         if (ImGui::BeginChild("WindowSettingsChild")) {
-            UIWidgets::CVarCheckbox("Only Show Current Level", CVAR_NAME_SHOW_CURRENT_LEVEL);
-            UIWidgets::CVarCheckbox("Dim Out of Logic Checks", CVAR_NAME_SHOW_LOGIC);
-            UIWidgets::CVarCheckbox("Hide Completed Worlds", CVAR_NAME_HIDE_COMPLETED_WORLD);
-            UIWidgets::CVarCheckbox("Hide Collected Checks", CVAR_NAME_HIDE_COLLECTED);
-            UIWidgets::CVarCheckbox("Hide Skipped Checks", CVAR_NAME_HIDE_SKIPPED);
-            UIWidgets::CVarCheckbox("Display Total Collected Checks", CVAR_NAME_SHOW_COLLECTED_CHECKS);
-            UIWidgets::CVarCheckbox("Display Total World Checks", CVAR_NAME_SHOW_WORLD_CHECKS);
+            UIWidgets::PrefCheckbox("Only Show Current Level", UIWidgets::CheckboxOptions().Setting(
+                                                                   &Prefs::Trackers::CheckTracker::ShowCurrentLevel));
+            UIWidgets::PrefCheckbox("Dim Out of Logic Checks",
+                                    UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::CheckTracker::ShowLogic));
+            UIWidgets::PrefCheckbox("Hide Completed Worlds", UIWidgets::CheckboxOptions().Setting(
+                                                                 &Prefs::Trackers::CheckTracker::HideCompletedWorld));
+            UIWidgets::PrefCheckbox("Hide Collected Checks", UIWidgets::CheckboxOptions().Setting(
+                                                                 &Prefs::Trackers::CheckTracker::HideCollected));
+            UIWidgets::PrefCheckbox("Hide Skipped Checks",
+                                    UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::CheckTracker::HideSkipped));
+            UIWidgets::PrefCheckbox(
+                "Display Total Collected Checks",
+                UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::CheckTracker::ShowCollectedChecks));
+            UIWidgets::PrefCheckbox("Display Total World Checks", UIWidgets::CheckboxOptions().Setting(
+                                                                      &Prefs::Trackers::CheckTracker::ShowWorldChecks));
 
-            ImGui::BeginDisabled(!CVAR_SHOW_COLLECTED_CHECKS);
-            UIWidgets::CVarCheckbox("Separate Total Collected Checks", CVAR_NAME_SEPARATE_COLLECTED_CHECKS);
+            ImGui::BeginDisabled(!Prefs::Trackers::CheckTracker::ShowCollectedChecks);
+            UIWidgets::PrefCheckbox(
+                "Separate Total Collected Checks",
+                UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::CheckTracker::SeparateCollectedChecks));
             ImGui::EndDisabled();
-            ImGui::BeginDisabled(!CVAR_SHOW_SEPARATE_COLLECTED_CHECKS || !CVAR_SHOW_COLLECTED_CHECKS);
-            if (UIWidgets::CVarSliderFloat("  ", CVAR_NAME_COLLECTED_CHECKS_OPACITY,
-                                           {
-                                               .format = "Opacity: %.1f",
-                                               .step = 0.01f,
-                                               .min = 0.0f,
-                                               .max = 1.0f,
-                                               .defaultValue = 0.5f,
-                                               .labelPosition = UIWidgets::LabelPositions::None,
-                                               .color = WIDGET_COLOR,
-                                           })) {
-                collectedChecksBG.w = CVAR_COLLECTED_CHECKS_OPACITY;
+            ImGui::BeginDisabled(!Prefs::Trackers::CheckTracker::SeparateCollectedChecks ||
+                                 !Prefs::Trackers::CheckTracker::ShowCollectedChecks);
+            if (UIWidgets::PrefSlider("Collected Checks Opacity", UIWidgets::SliderOptions()
+                                                .Setting(&Prefs::Trackers::CheckTracker::CollectedChecksOpacity)
+                                                .Display(UIWidgets::SliderDisplay::Float)
+                                                .Prefix("Opacity: ")
+                                                .LabelPosition(UIWidgets::LabelPositions::None)
+                                                .Color(WIDGET_COLOR))) {
+                collectedChecksBG.w = Prefs::Trackers::CheckTracker::CollectedChecksOpacity.Float();
             }
 
-            if (UIWidgets::CVarSliderFloat("    ", CVAR_NAME_COLLECTED_CHECKS_SCALE,
-                                           {
-                                               .format = "Scale: %.1f",
-                                               .step = 0.10f,
-                                               .min = 0.7f,
-                                               .max = 2.5f,
-                                               .defaultValue = 1.0f,
-                                               .labelPosition = UIWidgets::LabelPositions::None,
-                                               .color = WIDGET_COLOR,
-                                           })) {
-                collectedChecksScale = CVAR_COLLECTED_CHECKS_SCALE;
+            if (UIWidgets::PrefSlider("Collected Checks Scale", UIWidgets::SliderOptions()
+                                                  .Setting(&Prefs::Trackers::CheckTracker::CollectedChecksScale)
+                                                  .Display(UIWidgets::SliderDisplay::Float)
+                                                  .Prefix("Scale: ")
+                                                  .LabelPosition(UIWidgets::LabelPositions::None)
+                                                  .Color(WIDGET_COLOR))) {
+                collectedChecksScale = Prefs::Trackers::CheckTracker::CollectedChecksScale.Float();
             }
 
             ImGui::EndDisabled();
 
-            UIWidgets::CVarCheckbox("Toggle Floating Window", CVAR_NAME_ENABLE_FLOATING_WINDOW);
+            UIWidgets::PrefCheckbox("Toggle Floating Window",
+                                    UIWidgets::CheckboxOptions().Setting(&Prefs::Trackers::CheckTracker::Floating));
 
             if (UIWidgets::Button(
                     "Expand/Collapse All Levels",
@@ -416,47 +369,37 @@ void SettingsWindow::DrawElement() {
                 expandToggle = !expandToggle;
             }
 
-            if (UIWidgets::CVarSliderFloat("", CVAR_NAME_CHECK_TRACKER_OPACITY,
-                                           {
-                                               .format = "Opacity: %.1f",
-                                               .step = 0.01f,
-                                               .min = 0.0f,
-                                               .max = 1.0f,
-                                               .defaultValue = 0.5f,
-                                               .labelPosition = UIWidgets::LabelPositions::None,
-                                               .color = WIDGET_COLOR,
-                                           })) {
-                checkTrackerBG.w = CVAR_CHECK_TRACKER_OPACITY;
+            if (UIWidgets::PrefSlider("Tracker Opacity", UIWidgets::SliderOptions()
+                                              .Setting(&Prefs::Trackers::CheckTracker::Opacity)
+                                              .Display(UIWidgets::SliderDisplay::Float)
+                                              .Prefix("Opacity: ")
+                                              .LabelPosition(UIWidgets::LabelPositions::None)
+                                              .Color(WIDGET_COLOR))) {
+                checkTrackerBG.w = Prefs::Trackers::CheckTracker::Opacity.Float();
             }
 
-            if (UIWidgets::CVarSliderFloat(" ", CVAR_NAME_CHECK_TRACKER_SCALE,
-                                           {
-                                               .format = "Scale: %.1f",
-                                               .step = 0.10f,
-                                               .min = 0.7f,
-                                               .max = 2.5f,
-                                               .defaultValue = 1.0f,
-                                               .labelPosition = UIWidgets::LabelPositions::None,
-                                               .color = WIDGET_COLOR,
-                                           })) {
-                checkTrackerScale = CVAR_CHECK_TRACKER_SCALE;
+            if (UIWidgets::PrefSlider("Tracker Scale", UIWidgets::SliderOptions()
+                                               .Setting(&Prefs::Trackers::CheckTracker::Scale)
+                                               .Display(UIWidgets::SliderDisplay::Float)
+                                               .Prefix("Scale: ")
+                                               .LabelPosition(UIWidgets::LabelPositions::None)
+                                               .Color(WIDGET_COLOR))) {
+                checkTrackerScale = Prefs::Trackers::CheckTracker::Scale.Float();
             }
 
             int16_t checkColorIndex = 0;
-            for (auto& [cvar, color, label] : defaultCheckColorList) {
-                std::string cvarText = cvar;
-                cvarText += ".Value";
+            for (auto& [pref, label] : checkColorList) {
                 std::string colorText = label;
                 colorText += " Color";
                 std::string widgetLabel = "##";
                 widgetLabel += std::to_string(checkColorIndex);
 
                 ImGui::PushID(checkColorIndex);
-                UIWidgets::CVarColorPicker(widgetLabel.c_str(), cvar, color, true);
+                UIWidgets::PrefColorPicker(widgetLabel.c_str(),
+                                           UIWidgets::ColorPickerOptions().Setting(pref).UseAlpha());
                 ImGui::SameLine();
                 if (UIWidgets::Button(ICON_FA_REFRESH, { .size = ImVec2(32.0f, 32.0f), .color = WIDGET_COLOR })) {
-                    CVarSetColor(cvarText.c_str(), color);
-                    Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+                    pref->Reset();
                 }
                 ImGui::SameLine();
                 ImGui::Text(colorText.c_str());
@@ -470,10 +413,10 @@ void SettingsWindow::DrawElement() {
 }
 
 void Init() {
-    checkTrackerBG = { 0, 0, 0, CVAR_CHECK_TRACKER_OPACITY };
-    collectedChecksBG = { 0, 0, 0, CVAR_COLLECTED_CHECKS_OPACITY };
-    checkTrackerScale = CVAR_CHECK_TRACKER_SCALE;
-    collectedChecksScale = CVAR_COLLECTED_CHECKS_SCALE;
+    checkTrackerBG = { 0, 0, 0, Prefs::Trackers::CheckTracker::Opacity.Float() };
+    collectedChecksBG = { 0, 0, 0, Prefs::Trackers::CheckTracker::CollectedChecksOpacity.Float() };
+    checkTrackerScale = Prefs::Trackers::CheckTracker::Scale.Float();
+    collectedChecksScale = Prefs::Trackers::CheckTracker::CollectedChecksScale.Float();
 }
 
 } // namespace CheckTracker

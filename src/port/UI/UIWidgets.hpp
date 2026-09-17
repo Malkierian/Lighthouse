@@ -557,6 +557,9 @@ struct SliderOptions : WidgetOptions {
     SliderDisplay display = SliderDisplay::Integer;
     // Null derives the bar readout from the pref's factor.
     const char* format = nullptr;
+    // Text before the derived readout, for sliders that draw no separate label. Unlike Format it
+    // keeps the factor's precision; a literal percent must be written "%%".
+    const char* prefix = nullptr;
     ComponentAlignments alignment = ComponentAlignments::Left;
     LabelPositions labelPosition = LabelPositions::Above;
     Colors color = Colors::Gray;
@@ -585,6 +588,11 @@ struct SliderOptions : WidgetOptions {
 
     SliderOptions& Format(const char* format_) {
         format = format_;
+        return *this;
+    }
+
+    SliderOptions& Prefix(const char* prefix_) {
+        prefix = prefix_;
         return *this;
     }
 
